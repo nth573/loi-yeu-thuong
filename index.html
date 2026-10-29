@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tạo lời yêu thương</title>
+<style>
+:root{--pink:#f0507a;--pink2:#ff8aa5;--ink:#4a2a35;--muted:#a07c88;--line:#f4d5de;--soft:#fff6f9}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:linear-gradient(160deg,#ffe6ee,#ffd1df);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);padding:22px 16px 56px}
+.wrap{max-width:520px;margin:0 auto}
+h1{margin:6px 0 18px;text-align:center;color:#d63e69;font-size:24px}
+.card{background:#fff;border-radius:18px;padding:18px;margin-bottom:14px;box-shadow:0 6px 22px rgba(214,62,105,.12)}
+label,.lb{display:block;font-weight:600;font-size:14px;margin-bottom:8px}
+.sub{font-weight:400;color:var(--muted);font-size:12.5px}
+input[type=text],input[type=url],textarea,select{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:12px;font:inherit;font-size:15px;color:var(--ink);background:var(--soft);outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--pink2)}
+textarea{min-height:110px;resize:vertical}
+.cnt{text-align:right;font-size:12px;color:var(--muted);margin-top:4px}
+.field+.field{margin-top:14px}
+.styles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.styles input{position:absolute;opacity:0}
+.styles label{margin:0;border:2px solid var(--line);border-radius:14px;padding:14px 8px;text-align:center;cursor:pointer;background:var(--soft)}
+.styles label b{display:block;font-size:30px;margin-bottom:4px}
+.styles input:checked+label{border-color:var(--pink);background:#ffe9f0}
+.add{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:0;border-radius:12px;padding:12px;background:linear-gradient(90deg,var(--pink),var(--pink2));color:#fff;font:600 15px inherit;cursor:pointer}
+.thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.thumb{position:relative;width:74px;height:74px;border-radius:10px;overflow:hidden;background:#eee}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb button{position:absolute;top:3px;right:3px;width:22px;height:22px;border:0;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;cursor:pointer;line-height:22px;padding:0}
+.thumb.up::after{content:"";position:absolute;inset:0;background:rgba(255,255,255,.65)}
+.thumb.bad{outline:3px solid #e03b3b}
+.go{width:100%;border:0;border-radius:14px;padding:15px;font:700 16px inherit;letter-spacing:.5px;color:#fff;cursor:pointer;background:linear-gradient(90deg,#f0507a,#ff7e9c);box-shadow:0 8px 20px rgba(240,80,122,.35)}
+.go:disabled{opacity:.6;cursor:wait}
+.note{font-size:13px;line-height:1.5;color:#8a5a69;background:#fff3d9;border-radius:10px;padding:9px 12px;margin-top:10px}
+.note.err{background:#ffe1e1;color:#a22}
+.res{display:none}
+.res input{margin-bottom:10px;font-size:13px}
+.row{display:flex;gap:8px}
+.row a,.row button{flex:1;text-align:center;text-decoration:none;border:0;border-radius:12px;padding:12px 6px;font:600 14px inherit;cursor:pointer;background:var(--soft);color:#d63e69;border:1.5px solid var(--line)}
+.row .main{background:var(--pink);color:#fff;border-color:var(--pink)}
+.tiny{font-size:12px;color:var(--muted);margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>💌 Tạo lời yêu thương</h1>
+
+  <div class="card">
+    <div class="lb">Chọn kiểu</div>
+    <div class="styles">
+      <div><input type="radio" name="style" id="s1" value="heart" checked><label for="s1"><b>💗</b>Trái tim lấp lánh</label></div>
+      <div><input type="radio" name="style" id="s2" value="flower"><label for="s2"><b>💐</b>Bó hoa tulip</label></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="field"><label for="title">Tiêu đề</label><input type="text" id="title" maxlength="40" placeholder="Chào em"></div>
+    <div class="field"><label for="msg">Lời chúc</label><textarea id="msg" maxlength="320" placeholder="Viết điều bạn muốn nói..."></textarea><div class="cnt"><span id="n">0</span> / 320</div></div>
+    <div class="field"><label for="pin">Mã mở quà <span class="sub">(4 số, bỏ trống nếu không cần)</span></label><input type="text" id="pin" inputmode="numeric" maxlength="4" placeholder="1234"><div class="tiny">Chỉ là khóa cho vui, không phải bảo mật thật sự.</div></div>
+  </div>
+
+  <div class="card">
+    <div class="lb">Ảnh kỷ niệm <span class="sub">(tối đa 6)</span></div>
+    <button class="add" type="button" id="pick">📷 Chọn ảnh</button>
+    <input type="file" id="file" accept="image/*" multiple hidden>
+    <div class="thumbs" id="thumbs"></div>
+    <div class="field" style="margin-top:14px"><label for="urls">Hoặc dán link ảnh <span class="sub">(mỗi dòng 1 link)</span></label><textarea id="urls" style="min-height:64px" placeholder="https://..."></textarea></div>
+    <div class="note" id="imgNote" hidden></div>
+  </div>
+
+  <div class="card">
+    <label for="music">Nhạc nền <span class="sub">(link file .mp3, bỏ trống nếu không cần)</span></label>
+    <input type="url" id="music" placeholder="https://.../bai-hat.mp3">
+  </div>
+
+  <button class="go" id="go" type="button">TẠO LINK</button>
+
+  <div class="card res" id="res">
+    <div class="lb">Link của bạn đã sẵn sàng 🎉</div>
+    <input type="text" id="out" readonly>
+    <div class="row"><button class="main" type="button" id="copy">Sao chép</button><a id="open" target="_blank" rel="noopener">Xem thử</a><button type="button" id="share">Chia sẻ</button></div>
+    <div class="note" id="lenNote" hidden></div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id)};
+var MAX=6,items=[]; /* {blob, url, state:'wait'|'up'|'ok'|'bad', remote} */
+
+$('msg').addEventListener('input',function(){$('n').textContent=Array.from(this.value).length});
+$('pin').addEventListener('input',function(){this.value=this.value.replace(/\D/g,'')});
+$('pick').addEventListener('click',function(){$('file').click()});
+
+function note(text,err){var n=$('imgNote');n.hidden=!text;n.textContent=text||'';n.className='note'+(err?' err':'')}
+
+/* nén ảnh xuống tối đa 1280px, JPEG 0.82 để tải lên nhanh và nhẹ */
+function compress(file){
+  return new Promise(function(resolve,reject){
+    var url=URL.createObjectURL(file),img=new Image();
+    img.onload=function(){
+      var s=Math.min(1,1280/Math.max(img.width,img.height)),w=Math.round(img.width*s),h=Math.round(img.height*s);
+      var c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
+      URL.revokeObjectURL(url);
+      c.toBlob(function(b){b?resolve(b):reject(new Error('Không nén được ảnh'))},'image/jpeg',0.82);
+    };
+    img.onerror=function(){URL.revokeObjectURL(url);reject(new Error('Ảnh này không đọc được (HEIC?)'))};
+    img.src=url;
+  });
+}
+$('file').addEventListener('change',async function(){
+  var files=Array.from(this.files);this.value='';note('');
+  for(var f of files){
+    if(items.length>=MAX){note('Chỉ chọn tối đa '+MAX+' ảnh thôi nhé.');break}
+    try{var b=await compress(f);items.push({blob:b,url:URL.createObjectURL(b),state:'wait'})}
+    catch(e){note(e.message,true)}
+  }
+  renderThumbs();
+});
+function renderThumbs(){
+  var box=$('thumbs');box.innerHTML='';
+  items.forEach(function(it,i){
+    var d=document.createElement('div');d.className='thumb'+(it.state==='up'?' up':'')+(it.state==='bad'?' bad':'');
+    var im=document.createElement('img');im.src=it.url;d.appendChild(im);
+    var x=document.createElement('button');x.type='button';x.textContent='×';x.setAttribute('aria-label','Xóa ảnh');
+    x.onclick=function(){URL.revokeObjectURL(it.url);items.splice(i,1);renderThumbs()};
+    d.appendChild(x);box.appendChild(d);
+  });
+}
+
+async function upload(it){
+  var r=await fetch('api/upload',{method:'POST',headers:{'Content-Type':'image/jpeg'},body:it.blob});
+  var j=await r.json().catch(function(){return{}});
+  if(!r.ok||!j.url)throw new Error(j.error||('HTTP '+r.status));
+  return j.url;
+}
+
+function b64url(str){
+  var bytes=new TextEncoder().encode(str),bin='';
+  for(var i=0;i<bytes.length;i++)bin+=String.fromCharCode(bytes[i]);
+  return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function okUrl(u){try{var x=new URL(u);return x.protocol==='https:'||x.protocol==='http:'}catch(e){return false}}
+
+$('go').addEventListener('click',async function(){
+  var go=this,msg=$('msg').value.trim();
+  if(!msg){alert('Bạn chưa viết lời chúc nè 💕');$('msg').focus();return}
+  go.disabled=true;go.textContent='Đang tạo...';note('');$('res').style.display='none';
+  var remote=$('urls').value.split(/\s+/).filter(okUrl);
+  var failed=0,firstErr='';
+  for(var it of items){
+    if(it.remote)continue;
+    it.state='up';renderThumbs();
+    try{it.remote=await upload(it);it.state='ok'}
+    catch(e){it.state='bad';failed++;firstErr=firstErr||e.message}
+    renderThumbs();
+  }
+  var imgs=items.map(function(i){return i.remote}).filter(Boolean).concat(remote).slice(0,6);
+  if(failed){
+    note('Có '+failed+' ảnh chưa tải lên được ('+firstErr+'). Hàm tải ảnh /api/upload chỉ chạy khi trang được đưa lên Vercel. Bạn có thể bỏ ảnh đó hoặc dán link ảnh vào ô bên dưới.',true);
+  }
+  var data={v:1,s:document.querySelector('input[name=style]:checked').value,t:$('title').value.trim(),m:msg,i:imgs};
+  var pin=$('pin').value;if(/^\d{4}$/.test(pin))data.p=pin;
+  var mu=$('music').value.trim();if(okUrl(mu))data.a=mu;
+  var link=new URL('view.html',location.href);link.search='?d='+b64url(JSON.stringify(data));
+  $('out').value=link.href;$('open').href=link.href;$('res').style.display='block';
+  var ln=$('lenNote');ln.hidden=link.href.length<1500;
+  ln.textContent='Link dài '+link.href.length+' ký tự, hơi dài nên một số ứng dụng chat có thể cắt mất. Hãy rút gọn lời chúc hoặc bớt link ảnh.';
+  go.disabled=false;go.textContent='TẠO LINK';
+  $('res').scrollIntoView({behavior:'smooth',block:'center'});
+});
+
+$('copy').addEventListener('click',async function(){
+  var v=$('out').value;
+  try{await navigator.clipboard.writeText(v)}catch(e){$('out').select();document.execCommand('copy')}
+  this.textContent='Đã chép ✓';setTimeout(function(){$('copy').textContent='Sao chép'},1600);
+});
+$('share').addEventListener('click',function(){
+  var v=$('out').value;
+  if(navigator.share)navigator.share({title:$('title').value||'Một điều dành cho bạn',url:v}).catch(function(){});
+  else $('copy').click();
+});
+})();
+</script>
+</body>
+</html>
