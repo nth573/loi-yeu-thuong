@@ -14,12 +14,12 @@ body.flower{background:radial-gradient(circle at 50% 40%,#fff1f5,#ffd3e0 70%,#ff
 #stage{position:fixed;inset:0;cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none}
 .heartmode #card{display:none}
 #letter{position:absolute;inset:0;pointer-events:none}
-.pol{position:absolute;left:0;top:0;width:var(--w);margin:calc(var(--w)*-.5 - 10px) 0 0 calc(var(--w)*-.5);padding:5px 5px 14px;background:#fff;border-radius:3px;box-shadow:0 8px 26px rgba(255,120,60,.35),0 2px 8px rgba(0,0,0,.5);opacity:0;transform:translate(var(--sx),var(--sy)) scale(.2) rotate(0deg);transition:transform 1.5s cubic-bezier(.2,.9,.25,1.05) var(--dl),opacity .8s var(--dl);pointer-events:auto;cursor:zoom-in}
+.pol{position:absolute;left:0;top:0;width:var(--w);margin:calc(var(--w)*-.5 - 10px) 0 0 calc(var(--w)*-.5);padding:5px 5px 14px;background:#fff;border-radius:3px;box-shadow:0 8px 26px rgba(255,90,150,.4),0 2px 8px rgba(0,0,0,.5);opacity:0;transform:translate(var(--sx),var(--sy)) scale(.2) rotate(0deg);transition:transform 1.5s cubic-bezier(.2,.9,.25,1.05) var(--dl),opacity .8s var(--dl);pointer-events:auto;cursor:zoom-in}
 .pol img{display:block;width:100%;aspect-ratio:1/1;object-fit:cover;background:#222;border-radius:1px}
 #letter.go .pol{opacity:1;transform:translate(var(--tx),var(--ty)) scale(1) rotate(var(--r))}
-#txt{position:absolute;left:50%;transform:translateX(-50%);width:min(88vw,440px);padding:10px 8px;text-align:left;isolation:isolate;font-family:"Dancing Script","Segoe Script","Brush Script MT",cursive;color:#ffd7a1;text-shadow:0 0 10px rgba(255,140,50,.55),0 1px 2px #000;pointer-events:none}
+#txt{position:absolute;left:50%;transform:translateX(-50%);width:min(88vw,440px);padding:10px 8px;text-align:left;isolation:isolate;font-family:"Dancing Script","Segoe Script","Brush Script MT",cursive;color:#ffc6dc;text-shadow:0 0 10px rgba(255,70,140,.6),0 1px 2px #000;pointer-events:none}
 #txt::before{content:"";position:absolute;inset:-16px -12px;z-index:-1;background:radial-gradient(ellipse at 50% 50%,rgba(14,3,16,.72),rgba(14,3,16,0) 72%)}
-#txt .h{margin:0 0 8px;font-size:clamp(25px,7vw,33px);font-weight:600;color:#ffe3b8}
+#txt .h{margin:0 0 8px;font-size:clamp(25px,7vw,33px);font-weight:600;color:#ffe0ec}
 #txt p{margin:0 0 6px;font-size:clamp(17px,4.7vw,21px);line-height:1.45;font-weight:500;word-break:break-word}
 #txt .c::after{content:"|";margin-left:1px;animation:blink 1s steps(1) infinite}
 @keyframes blink{50%{opacity:0}}
@@ -156,13 +156,14 @@ var lastTime=0,raf=0,elapsed=0,mobile=false,sprites=null,phase=0,tPh=0,t4=0,flas
 var T_FORM=3.4,T_FLASH=5.2,T_RED=5.35,T_HINT=6.6;
 var LX=-.45,LY=-.55,LZ=.7; /* ánh sáng từ trên-trái-phía trước (đổ bóng phần bo tròn của tim) */
 var KEY={gold:[255,190,55],white:[255,243,212],red:[255,22,44],pink:[255,128,170]};
-var PAL=[],PAL_N=24;
+var PAL=[],PALP=[],PAL_N=24;
 function clamp01(x){return x<0?0:x>1?1:x}
 function ease3(t){return 1-Math.pow(1-t,3)}
 function easeIO(t){return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2}
 function mix(a,b,t){return[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t]}
 function buildPalette(){
-  PAL=[];
+  PAL=[];PALP=[];
+  for(var q=0;q<8;q++){var kk=.7+.3*(q/7),cc=q<5?mix([255,92,150],[255,150,190],q/4):mix([255,150,190],[255,226,238],(q-4)/3);PALP.push('rgb('+Math.round(cc[0]*kk)+','+Math.round(cc[1]*kk)+','+Math.round(cc[2]*kk)+')')}
   for(var i=0;i<PAL_N;i++){
     var base=i<=8?mix(KEY.gold,KEY.white,i/8):mix(KEY.white,KEY.red,(i-8)/(PAL_N-9)),row=[];
     for(var v=0;v<8;v++){
@@ -237,8 +238,8 @@ function heartPoint(){
 function resize(){
   W=innerWidth;H=innerHeight;DPR=Math.min(devicePixelRatio||1,1.5);
   cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);ctx.setTransform(DPR,0,0,DPR,0,0);
-  scale=Math.min(W*.86,H*.57)/36;cx=W/2;cy=H*.40;groundY=H*.80;groundU=(groundY-cy)/scale;
-  domeRx=Math.min(W*.30,230)/scale;domeRy=domeRx*.62;
+  scale=Math.min(W*.86,H*.57)/36;cx=W/2;cy=H*.40;groundY=H*.90;groundU=(groundY-cy)/scale;
+  domeRx=Math.min(W*.42,320)/scale;domeRy=domeRx*.17;
   envW=Math.min(W*.64,320);envH=envW*.68;envCy=H*.64;envTop=envCy-envH/2;etU=(envTop-cy)/scale;
   $('hint').style.top=(groundY+16)+'px';
   retarget();layoutLetter();
@@ -388,7 +389,7 @@ function frame(now){
   /* màu: vàng -> trắng vàng -> đỏ; sau khi chạm quay về vàng */
   var c0=T_FORM-.2,ciT=phase>=2?1:(e<c0?0:(e<T_RED?(e-c0)/(T_RED-c0)*8:8+Math.min(1,(e-T_RED)/1.5)*(PAL_N-9)));
   if(phase<2)ciCur=ciT;else ciCur+=(ciT-ciCur)*Math.min(1,dt*5);
-  var ci=Math.round(ciCur),pal=PAL[ci],redness=Math.max(0,(ciCur-8)/(PAL_N-9)),intro=Math.min(1,e/1.1),groundIn=clamp01((e-1.2)/1.5)*intro;
+  var ci=Math.round(ciCur),pal=phase>=2?PALP:PAL[ci],redness=Math.max(0,(ciCur-8)/(PAL_N-9)),intro=Math.min(1,e/1.1),groundIn=clamp01((e-1.2)/1.5)*intro;
   for(var i=0;i<stars.length;i++){var s0=stars[i];ctx.globalAlpha=(.12+.34*Math.abs(Math.sin(e*s0.sp+s0.ph)))*intro;ctx.fillStyle='#fff';ctx.fillRect(s0.x*W,s0.y*H,s0.r*1.6,s0.r*1.6)}
   ctx.globalCompositeOperation='lighter';
   var domeG=Math.min(1,e/2.8);domeG=1-Math.pow(1-domeG,3);
@@ -407,7 +408,7 @@ function frame(now){
   }
   if(phase>=2){ /* ánh sáng vàng quanh lá thư, sáng hơn khi mở nắp */
     var gA=(phase===2?clamp01((e-tPh-.4)/1.4):1)*(.2+.2*op),gR=envW*1.15,gY=envCy+op*H*.13,g4=ctx.createRadialGradient(cx,gY,0,cx,gY,gR);
-    g4.addColorStop(0,'rgba(255,196,90,'+gA+')');g4.addColorStop(1,'rgba(255,170,50,0)');
+    g4.addColorStop(0,'rgba(255,110,165,'+gA+')');g4.addColorStop(1,'rgba(255,80,140,0)');
     ctx.globalAlpha=1;ctx.fillStyle=g4;ctx.fillRect(cx-gR,gY-gR,gR*2,gR*2);
   }
   if(groundIn>0)for(var m=0;m<motes.length;m++){
@@ -445,7 +446,7 @@ function frame(now){
   if(e>1.8){
     var fa=Math.min(1,(e-1.8)/1.5);
     for(var h=0;h<hearts.length;h++){
-      var ht=hearts[h],sprite=ci<10?sprites.gold:(ht.red?sprites.red:sprites.pink),yy2=((ht.y*H*1.1-(e*ht.sp))%(H*.95)+H*.95)%(H*.95)+H*.02,xx=ht.x*W+Math.sin(e*.8+ht.ph)*ht.w;
+      var ht=hearts[h],sprite=phase>=2?sprites.pink:ci<10?sprites.gold:(ht.red?sprites.red:sprites.pink),yy2=((ht.y*H*1.1-(e*ht.sp))%(H*.95)+H*.95)%(H*.95)+H*.02,xx=ht.x*W+Math.sin(e*.8+ht.ph)*ht.w;
       var ya=Math.min(1,Math.max(0,(groundY+30-yy2)/90));
       ctx.globalAlpha=(.25+.6*Math.abs(Math.sin(e*.9+ht.ph)))*fa*ya;ctx.drawImage(sprite,xx-ht.s,yy2-ht.s,ht.s*2,ht.s*2);
     }
