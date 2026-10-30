@@ -136,7 +136,7 @@ $('light').addEventListener('click',function(){this.style.display='none'});
 /* ---------- trái tim hạt 3D thực: thể tích, phối cảnh, hội tụ và bùng nổ ---------- */
 var cv=$('fx'),ctx=cv.getContext('2d'),W=0,H=0,DPR=1,parts=[],stars=[],scale=10,cx=0,cy=0;
 var rotY=0,rotX=-0.08,dragging=false,dragMoved=false,lastPX=0,lastPY=0,autoRotate=true;
-var opened=false,burstUntil=0,nextBurstAt=8,lastFrame=0,elapsed=0,phaseStart=0;
+var opened=false,burstUntil=0,nextBurstAt=8,lastFrame=0,elapsed=0,phaseStart=0,raf=0;
 function pointerDown(e){
   if(style!=='heart')return;
   dragging=true;dragMoved=false;lastPX=e.clientX;lastPY=e.clientY;
