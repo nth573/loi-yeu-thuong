@@ -142,7 +142,7 @@ var envW=0,envH=0,envY=0,mouthU=0,bnd=[],bndLen=0;
 var rotY=0,rotX=-0.12,dragging=false,downX=0,downY=0,lastPX=0,lastPY=0,dragDist=0;
 var lastTime=0,raf=0,nextBurst=15,elapsed=0,burstUntil=0,mobile=false,spriteGold=null,spritePink=null;
 var T_FLAP=1.2,T_RISE=2.0,T_FLASH=4.4,T_RED=4.55,T_HINT=5.8;
-var ZR=3.6,ZC=7; /* độ dày tim: ở mép / ở giữa */
+var LX=-.45,LY=-.55,LZ=.7; /* ánh sáng từ trên-trái-phía trước */
 var KEY={gold:[255,190,55],white:[255,243,212],red:[255,22,44],pink:[255,128,170]};
 var PAL=[],PAL_N=24;
 function clamp01(x){return x<0?0:x>1?1:x}
@@ -180,46 +180,61 @@ function resize(){
   $('hint').style.top=(groundY+16)+'px';
 }
 
-/* ---- điểm trên khối trái tim: mặt trước/sau hơi phồng + thành bên + ít hạt trong ruột ---- */
-function heartF(x,y){var q=x*x+y*y-1;return q*q*q-x*x*y*y*y}
+/* ---- khối trái tim phồng như quả bóng: độ cao z theo khoảng cách d tới mép, mặt cắt 1/4 đường tròn nên mép bo tròn mượt ---- */
+var BEVEL=8.5,THICK=7.6,DOME=2.2,GX0=-18,GX1=18,GY0=-14,GY1=19,GN=110,dgrid=null;
 function buildBoundary(){
-  var n=900,pts=[],i,len=0;
-  for(i=0;i<=n;i++){var t=i/n*6.2832,sn=Math.sin(t);pts.push({x:16*sn*sn*sn,y:-(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t)),c:0})}
-  for(i=1;i<=n;i++){len+=Math.hypot(pts[i].x-pts[i-1].x,pts[i].y-pts[i-1].y);pts[i].c=len}
-  for(i=0;i<=n;i++){var a=pts[Math.max(0,i-1)],b=pts[Math.min(n,i+1)],dx=b.x-a.x,dy=b.y-a.y,l=Math.hypot(dx,dy)||1;pts[i].nx=dy/l;pts[i].ny=-dx/l}
-  bnd=pts;bndLen=len;
+  var n=720,pts=[],i;
+  for(i=0;i<=n;i++){var t=i/n*6.2832,sn=Math.sin(t);pts.push({x:16*sn*sn*sn,y:-(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t))})}
+  bnd=pts;
 }
-function boundaryPoint(){
-  var s=Math.random()*bndLen,lo=0,hi=bnd.length-1;
-  while(hi-lo>1){var m=(lo+hi)>>1;if(bnd[m].c<=s)lo=m;else hi=m}
-  var a=bnd[lo],b=bnd[hi],u=(s-a.c)/((b.c-a.c)||1);
-  return{x:a.x+(b.x-a.x)*u,y:a.y+(b.y-a.y)*u,nx:a.nx+(b.nx-a.nx)*u,ny:a.ny+(b.ny-a.ny)*u};
+function buildDistGrid(){
+  if(!bnd.length)buildBoundary();
+  var B=[],i,j,k,n=bnd.length-1;for(i=0;i<n;i+=3)B.push(bnd[i]);
+  var m=B.length;dgrid=new Float32Array(GN*GN);
+  for(j=0;j<GN;j++)for(i=0;i<GN;i++){
+    var x=GX0+(GX1-GX0)*i/(GN-1),y=GY0+(GY1-GY0)*j/(GN-1),inside=false,dm=1e9;
+    for(k=0;k<m;k++){
+      var a=B[k],b=B[(k+1)%m],dx=b.x-a.x,dy=b.y-a.y;
+      if((a.y>y)!==(b.y>y)&&x<(b.x-a.x)*(y-a.y)/(b.y-a.y)+a.x)inside=!inside;
+      var t=((x-a.x)*dx+(y-a.y)*dy)/(dx*dx+dy*dy||1);t=t<0?0:t>1?1:t;
+      var ex=x-(a.x+dx*t),ey=y-(a.y+dy*t),d2=ex*ex+ey*ey;if(d2<dm)dm=d2;
+    }
+    dgrid[j*GN+i]=inside?Math.sqrt(dm):-Math.sqrt(dm);
+  }
 }
-function insidePoint(){
-  var x,y,f,g=0;
-  do{x=(Math.random()*2-1)*1.15;y=Math.random()*2.3-1.02;f=heartF(x,y);g++}while(f>0&&g<80);
-  if(g>=80){x=0;y=.3;f=heartF(x,y)}
-  return{x:x,y:y,f:f};
+function distAt(x,y){
+  var fx=(x-GX0)/(GX1-GX0)*(GN-1),fy=(y-GY0)/(GY1-GY0)*(GN-1);
+  if(fx<0||fy<0||fx>=GN-1||fy>=GN-1)return-1;
+  var i=fx|0,j=fy|0,u=fx-i,v=fy-j,g=dgrid,o=j*GN+i;
+  return(g[o]*(1-u)+g[o+1]*u)*(1-v)+(g[o+GN]*(1-u)+g[o+GN+1]*u)*v;
+}
+function surfH(d){ /* độ cao mặt trên tại khoảng cách d tới mép, và đạo hàm theo d */
+  var m=d>=BEVEL?1:d/BEVEL,q=1-m,r=Math.sqrt(Math.max(0,1-q*q));
+  var dm=d>=BEVEL?0:THICK*q/(BEVEL*Math.max(.03,r)),dd=DOME*Math.min(1,d/14);
+  return{h:THICK*r+dd,dh:dm+(d<14?DOME/14:0)};
 }
 function heartPoint(){
-  var r=Math.random();
-  if(r<.27){ /* thành bên: vuông góc mép tim */
-    var b=boundaryPoint(),inset=Math.random()*.55;
-    return{x:b.x-b.nx*inset,y:b.y-b.ny*inset,z:(Math.random()*2-1)*ZR,nx:b.nx,ny:b.ny,nz:0,k:2};
+  var x,y,d,sh,g=0,E=.3;
+  for(;;){
+    x=GX0+Math.random()*(GX1-GX0);y=GY0+Math.random()*(GY1-GY0);d=distAt(x,y);
+    if(d<=.01){if(++g>400){x=0;y=2;d=5;sh=surfH(d);break}continue}
+    sh=surfH(d);
+    /* bù diện tích mặt cong: chỗ dốc (gần mép) cần nhiều hạt hơn để mật độ đều trên bề mặt */
+    var fac=Math.sqrt(1+sh.dh*sh.dh);if(Math.random()*4.6<Math.min(4.6,fac))break;
+    if(++g>400){break}
   }
-  var q=insidePoint(),th=Math.sqrt(Math.min(1,-q.f)),X=q.x*14.05,Y=-12+(1.25-q.y)*12.9;
-  if(r<.34){ /* ruột */
-    return{x:X,y:Y,z:(Math.random()*2-1)*(ZR+(ZC-ZR)*th)*.9,nx:0,ny:0,nz:0,k:0};
-  }
-  var e=.002,gx=heartF(q.x+e,q.y)-heartF(q.x-e,q.y),gy=heartF(q.x,q.y+e)-heartF(q.x,q.y-e),gl=Math.hypot(gx,gy)||1;
-  var s=Math.random()<.5?-1:1,w=(1-th)*.9,nx=gx/gl*w,ny=-gy/gl*w,nl=Math.hypot(nx,ny,1);
-  return{x:X,y:Y,z:s*(ZR+(ZC-ZR)*th)+(Math.random()-.5)*.7,nx:nx/nl,ny:ny/nl,nz:s/nl,k:1};
+  var s=Math.random()<.5?-1:1;
+  if(Math.random()<.05)return{x:x,y:y,z:(Math.random()*2-1)*sh.h*.85,nx:0,ny:0,nz:0,k:0};
+  var gx=(distAt(x+E,y)-distAt(x-E,y))/(2*E),gy=(distAt(x,y+E)-distAt(x,y-E))/(2*E);
+  if(d<E*1.5){var gl0=Math.hypot(gx,gy)||1;gx/=gl0;gy/=gl0}
+  var hx=sh.dh*gx,hy=sh.dh*gy,nl=Math.hypot(hx,hy,1);
+  return{x:x,y:y,z:s*sh.h,nx:s*(-hx)/nl,ny:s*(-hy)/nl,nz:s/nl,k:1};
 }
 function build(){
   mobile=W<700||('ontouchstart' in window);
-  var N=mobile?5200:10500,M=mobile?300:560;
+  var N=mobile?6200:12500,M=mobile?300:560;
   parts.length=0;motes.length=0;stars.length=0;hearts.length=0;
-  if(!bnd.length)buildBoundary();
+  if(!dgrid)buildDistGrid();
   var skip=reduce;
   for(var i=0;i<N;i++){
     var q=heartPoint();
@@ -358,12 +373,15 @@ function frame(now){
       var rx=p.x*cyaw+p.z*syaw,rz=-p.x*syaw+p.z*cyaw;
       var ry=p.y*cp-rz*sp,rz2=p.y*sp+rz*cp;
       var persp=430/(430-rz2*scale*.62),px=cx+rx*scale*persp*beat,py=cy+ry*scale*persp*beat;
-      /* chỉ hiện phía hướng về người xem: pháp tuyến quay cùng tim, mặt sau mờ hẳn nên nhìn rõ chiều xoay */
-      var vis;
-      if(p.k){var nrz=-p.nx*syaw+p.nz*cyaw,nz2=p.ny*sp+nrz*cp,u=clamp01((nz2+.1)/.65);u=u*u*(3-2*u);vis=p.k===1?.06+.94*u:.3+.7*u}
-      else vis=.55;
-      var al=(.55+.45*Math.abs(Math.sin(e*p.sp+p.ph)))*vis*pa*(e>T_RED?1.18:1)*(.8+.2*clamp01((rz2+7)/14));
-      ctx.globalAlpha=al>1?1:al;ctx.fillStyle=pal[p.v];
+      /* pháp tuyến quay cùng tim: ẩn mặt quay lưng (nhìn rõ chiều xoay) và đổ bóng cho phần bo tròn */
+      var vis,lit;
+      if(p.k){
+        var nrx=p.nx*cyaw+p.nz*syaw,nrz=-p.nx*syaw+p.nz*cyaw,nry=p.ny*cp-nrz*sp,nz2=p.ny*sp+nrz*cp;
+        var u=clamp01((nz2+.2)/.85);u=u*u*(3-2*u);vis=.08+.92*u;
+        lit=clamp01(nrx*LX+nry*LY+nz2*LZ);
+      }else{vis=.5;lit=.4}
+      var al=(.55+.45*Math.abs(Math.sin(e*p.sp+p.ph)))*vis*pa*(e>T_RED?1.18:1)*(.8+.2*clamp01((rz2+7)/14))*(.55+.8*lit);
+      ctx.globalAlpha=al>1?1:al;ctx.fillStyle=pal[Math.min(7,p.v+((lit*2.6)|0))];
       var r=p.sz*persp;
       if(r<1.35)ctx.fillRect(px-r*.5,py-r*.5,r,r);else{ctx.beginPath();ctx.arc(px,py,r*.6,0,6.283);ctx.fill()}
     }
