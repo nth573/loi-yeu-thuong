@@ -667,7 +667,7 @@ function openFlower(){
 }
 
 /* ---------- hộp quà ma trận: quà -> đếm 3-2-1 -> chữ hạt -> ảnh hạt -> lá thư ---------- */
-var G={N:0,D:0,x:null,y:null,vx:null,vy:null,tx:null,ty:null,ck:null,t:0,last:0,raf:0,scenes:[],si:-1,ts:0,rain:[],im:[],glitch:0,gseed:0,fade:1,hue0:0,hspan:240,hspeed:40,spring:.06,mode:'rgb',psz:1.9,bob:0,ia:0,cur:-1,box:null,fl:false,flA:0,rainA:.55,paper:false,hintOn:false,fo:[]};
+var G={N:0,D:0,dl:null,x:null,y:null,vx:null,vy:null,tx:null,ty:null,ck:null,t:0,last:0,raf:0,scenes:[],si:-1,ts:0,rain:[],im:[],glitch:0,gseed:0,fade:1,hue0:0,hspan:240,hspeed:40,spring:.06,mode:'rgb',psz:1.9,bob:0,ia:0,cur:-1,box:null,fl:false,flA:0,rainA:.55,paper:false,hintOn:false,fo:[]};
 var HUES=[],RGBC=[],OC=null,OX=null;
 function gInitColors(){
   if(HUES.length)return;
@@ -702,7 +702,15 @@ function gAssign(pts){
     var j=((Math.random()*m)|0)*3;G.tx[i]=pts[j]+(Math.random()-.5)*1.4;G.ty[i]=pts[j+1]+(Math.random()-.5)*1.4;G.ck[i]=pts[j+2];
   }
 }
-function gBurst(p){for(var i=0;i<G.N-G.D;i++){G.vx[i]+=(Math.random()-.5)*p;G.vy[i]+=(Math.random()-.5)*p}}
+/* bắn pixel ra ngoài, rồi từng hạt (trễ ngẫu nhiên) mới bị kéo về hình mới */
+function gExplode(power,hold){
+  var n=G.N-G.D,ox=W/2,oy=H*.42;
+  for(var i=0;i<n;i++){
+    var dx=G.x[i]-ox,dy=G.y[i]-oy,d=Math.hypot(dx,dy)||1,v=(.35+Math.random())*power;
+    G.vx[i]=dx/d*v+(Math.random()-.5)*power*.5;G.vy[i]=dy/d*v+(Math.random()-.5)*power*.5;
+    G.dl[i]=G.t+hold*(.7+Math.random()*.6);
+  }
+}
 function gTextPts(txt,big){
   var bw=Math.round(W),bh=Math.round(H*(big?.55:.4)),oy=Math.round(H*.42-bh/2);
   return gSample(bw,bh,function(c,w,h){
@@ -743,12 +751,12 @@ function gLoad(u,cb){
 function gBuild(){
   gInitColors();mobile=W<700||('ontouchstart' in window);
   G.N=mobile?7000:14000;G.D=Math.round(G.N*.1);var N=G.N;
-  G.x=new Float32Array(N);G.y=new Float32Array(N);G.vx=new Float32Array(N);G.vy=new Float32Array(N);G.tx=new Float32Array(N);G.ty=new Float32Array(N);G.ck=new Int16Array(N);
+  G.x=new Float32Array(N);G.y=new Float32Array(N);G.vx=new Float32Array(N);G.vy=new Float32Array(N);G.tx=new Float32Array(N);G.ty=new Float32Array(N);G.ck=new Int16Array(N);G.dl=new Float32Array(N);
   for(var i=0;i<N;i++){G.x[i]=Math.random()*W;G.y[i]=Math.random()*H;G.tx[i]=G.x[i];G.ty[i]=G.y[i]}
-  G.scenes=[{k:'gift'},{k:'digit',v:'3',h:75,d:1.15},{k:'digit',v:'2',h:160,d:1.15},{k:'digit',v:'1',h:215,d:1.15}];
-  (words.length?words:[title||'I LOVE YOU']).forEach(function(w){G.scenes.push({k:'word',v:w,d:2})});
+  G.scenes=[{k:'gift'},{k:'digit',v:'3',h:75,d:1.9},{k:'digit',v:'2',h:160,d:1.9},{k:'digit',v:'1',h:215,d:1.9}];
+  (words.length?words:[title||'I LOVE YOU']).forEach(function(w){G.scenes.push({k:'word',v:w,d:2.9})});
   G.im=[];imgs.forEach(function(u){var o={img:null,cors:false,ok:null};G.im.push(o);gLoad(u,function(r){if(r){o.img=r.img;o.cors=r.cors;o.ok=true}else o.ok=false})});
-  imgs.forEach(function(u,i){G.scenes.push({k:'photo',i:i,d:3.8})});
+  imgs.forEach(function(u,i){G.scenes.push({k:'photo',i:i,d:4.6})});
   G.scenes.push({k:'letter'});
   G.si=0;G.ts=0;G.t=reduce?30:0;
   gEnter();
@@ -757,19 +765,19 @@ function gBuild(){
 function gNext(){G.si++;if(G.si>=G.scenes.length)G.si=G.scenes.length-1;G.ts=G.t;gEnter()}
 function gEnter(){
   var s=G.scenes[G.si];G.glitch=0;G.fl=(s.k==='photo'||s.k==='letter');G.cur=-1;G.ia=0;
-  if(s.k==='gift'){G.mode='rgb';G.psz=1.9;G.spring=.05;gAssign(gGiftPts());G.fade=1}
-  else if(s.k==='digit'){gBurst(26);G.mode='hue';G.hue0=s.h;G.hspan=30;G.hspeed=0;G.psz=2.1;G.spring=.07;gAssign(gTextPts(s.v,true))}
-  else if(s.k==='word'){gBurst(20);G.mode='hue';G.hue0=0;G.hspan=240;G.hspeed=45;G.psz=1.9;G.spring=.075;G.glitch=1;G.gseed=(Math.random()*999)|0;gAssign(gTextPts(s.v,false))}
+  if(s.k==='gift'){G.mode='rgb';G.psz=1.9;G.spring=.05;for(var q=0;q<G.N;q++)G.dl[q]=0;gAssign(gGiftPts());G.fade=1}
+  else if(s.k==='digit'){gExplode(30,.42);G.mode='hue';G.hue0=s.h;G.hspan=30;G.hspeed=0;G.psz=2.1;G.spring=.085;gAssign(gTextPts(s.v,true))}
+  else if(s.k==='word'){gExplode(34,.5);G.mode='hue';G.hue0=0;G.hspan=240;G.hspeed=45;G.psz=1.9;G.spring=.08;G.gseed=(Math.random()*999)|0;gAssign(gTextPts(s.v,false))}
   else if(s.k==='photo'){
     var o=G.im[s.i];
     if(o.ok===false){gNext();return}
     if(o.ok===null){ /* ảnh chưa tải xong: chờ thêm một chút */
-      G.mode='rgb';G.spring=.05;gBurst(14);s.wait=true;return}
-    gBurst(30);G.mode='rgb';G.psz=1.7;G.spring=.06;G.cur=s.i;gAssign(gPhotoPts(o));
+      G.mode='rgb';G.spring=.05;gExplode(24,.4);s.wait=true;return}
+    gExplode(34,.5);G.mode='rgb';G.psz=1.7;G.spring=.075;G.cur=s.i;gAssign(gPhotoPts(o));
   }else if(s.k==='letter'){
     G.mode='rgb';G.glitch=0;G.fl=true;
     for(var i=0;i<G.N-G.D;i++){G.tx[i]=G.x[i]+(Math.random()-.5)*260;G.ty[i]=-60-Math.random()*H*.4}
-    G.spring=.012;G.rainA=.5;
+    G.spring=.012;G.rainA=.5;for(var q=0;q<G.N;q++)G.dl[q]=0;
     setTimeout(function(){$('paper').classList.add('show')},reduce?0:900);
     setTimeout(function(){typeHostId='ptxt';typeLines()},reduce?100:2000);
   }
@@ -781,8 +789,8 @@ function gFrame(now){
   if(s.k==='photo'&&s.wait){var o=G.im[s.i];if(o.ok!==null){s.wait=false;gEnter()}}
   else if(s.d&&ts>s.d&&G.si<G.scenes.length-1)gNext();
   s=G.scenes[G.si];ts=t-G.ts;
-  if(s.k==='word'){G.glitch=ts<.4?1-ts/.4:(ts>s.d-.35?(ts-(s.d-.35))/.35:0)}
-  if(s.k==='photo'&&G.cur>=0)G.ia=Math.min(1,Math.max(0,(ts-1.5)/.9))*(ts>s.d-.4?Math.max(0,(s.d-ts)/.4):1);
+  if(s.k==='word'){G.glitch=ts<.5?0:(ts<1.15?1-(ts-.5)/.65:0)}
+  if(s.k==='photo'&&G.cur>=0)G.ia=Math.min(1,Math.max(0,(ts-1.9)/.9))*(ts>s.d-.4?Math.max(0,(s.d-ts)/.4):1);
   G.bob=s.k==='gift'?Math.sin(t*1.7)*4:0;
   if(s.k==='gift'&&!G.hintOn&&t>1){G.hintOn=true;hintShow()}
   if(s.k==='letter')G.fade=Math.max(.0,G.fade-dt*.8);
@@ -797,11 +805,11 @@ function gFrame(now){
   }
   ctx.globalAlpha=1;
   /* hạt */
-  var n=G.N-G.D,sp=G.spring*k,dm=Math.pow(.86,k),sz=G.psz,gl=G.glitch,gs=G.gseed,by=G.bob;
+  var n=G.N-G.D,sp=G.spring*k,dm=Math.pow(.86,k),fr=Math.pow(.96,k),sz=G.psz,gl=G.glitch,gs=G.gseed,by=G.bob;
   ctx.globalAlpha=G.fade;
   var hue=G.mode==='hue';
   for(i=0;i<n;i++){
-    G.vx[i]=(G.vx[i]+(G.tx[i]-G.x[i])*sp)*dm;G.vy[i]=(G.vy[i]+(G.ty[i]-G.y[i])*sp)*dm;G.x[i]+=G.vx[i]*k;G.y[i]+=G.vy[i]*k;
+    if(t<G.dl[i]){G.vx[i]*=fr;G.vy[i]*=fr}else{G.vx[i]=(G.vx[i]+(G.tx[i]-G.x[i])*sp)*dm;G.vy[i]=(G.vy[i]+(G.ty[i]-G.y[i])*sp)*dm}G.x[i]+=G.vx[i]*k;G.y[i]+=G.vy[i]*k;
     var px=G.x[i],py=G.y[i]+by;
     if(gl>0.02){px+=(((((py/6)|0)*9301+gs)%17)-8)*gl*3.2}
     if(px<-4||px>W+4||py<-4||py>H+4)continue;
