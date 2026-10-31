@@ -18,7 +18,8 @@ input:focus,textarea:focus,select:focus{border-color:var(--pink2)}
 textarea{min-height:110px;resize:vertical}
 .cnt{text-align:right;font-size:12px;color:var(--muted);margin-top:4px}
 .field+.field{margin-top:14px}
-.styles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.styles{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.styles label{font-size:13px}
 .styles input{position:absolute;opacity:0}
 .styles label{margin:0;border:2px solid var(--line);border-radius:14px;padding:14px 8px;text-align:center;cursor:pointer;background:var(--soft)}
 .styles label b{display:block;font-size:30px;margin-bottom:4px}
@@ -51,11 +52,13 @@ textarea{min-height:110px;resize:vertical}
     <div class="styles">
       <div><input type="radio" name="style" id="s1" value="heart" checked><label for="s1"><b>💗</b>Trái tim lấp lánh</label></div>
       <div><input type="radio" name="style" id="s2" value="flower"><label for="s2"><b>💐</b>Bó hoa tulip</label></div>
+      <div><input type="radio" name="style" id="s3" value="gift"><label for="s3"><b>🎁</b>Hộp quà ma trận</label></div>
     </div>
   </div>
 
   <div class="card">
     <div class="field"><label for="title">Tiêu đề</label><input type="text" id="title" maxlength="40" placeholder="Chào em"></div>
+    <div class="field" id="kwBox" hidden><label for="kw">Chữ chạy bằng hạt <span class="sub">(mỗi dòng 1 cụm ngắn, tối đa 4, ví dụ ngày kỷ niệm, I LOVE YOU, tên)</span></label><textarea id="kw" style="min-height:84px" maxlength="90" placeholder="18.06.2026&#10;I LOVE YOU&#10;Tên người ấy"></textarea></div>
     <div class="field"><label for="msg">Lời chúc</label><textarea id="msg" maxlength="320" placeholder="Viết điều bạn muốn nói..."></textarea><div class="cnt"><span id="n">0</span> / 320</div></div>
     <div class="field"><label for="pin">Mã mở quà <span class="sub">(4 số, bỏ trống nếu không cần)</span></label><input type="text" id="pin" inputmode="numeric" maxlength="4" placeholder="1234"><div class="tiny">Chỉ là khóa cho vui, không phải bảo mật thật sự.</div></div>
     <div class="field"><label for="phint">Gợi ý mở khóa <span class="sub">(hiện cho người nhận khi bấm Gợi ý hoặc nhập sai)</span></label><input type="text" id="phint" maxlength="60" placeholder="Ví dụ: Ngày mình quen nhau"></div>
@@ -91,6 +94,7 @@ textarea{min-height:110px;resize:vertical}
 var $=function(id){return document.getElementById(id)};
 var MAX=6,items=[]; /* {blob, url, state:'wait'|'up'|'ok'|'bad', remote} */
 
+document.querySelectorAll('input[name=style]').forEach(function(r){r.addEventListener('change',function(){$('kwBox').hidden=document.querySelector('input[name=style]:checked').value!=='gift'})});
 $('msg').addEventListener('input',function(){$('n').textContent=Array.from(this.value).length});
 $('pin').addEventListener('input',function(){this.value=this.value.replace(/\D/g,'')});
 $('pick').addEventListener('click',function(){$('file').click()});
@@ -163,6 +167,7 @@ $('go').addEventListener('click',async function(){
     note('Có '+failed+' ảnh chưa tải lên được ('+firstErr+'). Hàm tải ảnh /api/upload chỉ chạy khi trang được đưa lên Vercel. Bạn có thể bỏ ảnh đó hoặc dán link ảnh vào ô bên dưới.',true);
   }
   var data={v:1,s:document.querySelector('input[name=style]:checked').value,t:$('title').value.trim(),m:msg,i:imgs};
+  if(data.s==='gift'){var kk=$('kw').value.split(/\n/).map(function(x){return x.trim().slice(0,20)}).filter(Boolean).slice(0,4);if(kk.length)data.k=kk}
   var pin=$('pin').value;if(/^\d{4}$/.test(pin)){data.p=pin;var ph=$('phint').value.trim();if(ph)data.h=ph}
   var mu=$('music').value.trim();if(okUrl(mu))data.a=mu;
   data.i=data.i.map(function(u){return u.indexOf('https://files.catbox.moe/')===0?'c:'+u.slice(25):u});
