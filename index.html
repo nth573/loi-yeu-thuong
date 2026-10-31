@@ -58,6 +58,7 @@ textarea{min-height:110px;resize:vertical}
     <div class="field"><label for="title">Tiêu đề</label><input type="text" id="title" maxlength="40" placeholder="Chào em"></div>
     <div class="field"><label for="msg">Lời chúc</label><textarea id="msg" maxlength="320" placeholder="Viết điều bạn muốn nói..."></textarea><div class="cnt"><span id="n">0</span> / 320</div></div>
     <div class="field"><label for="pin">Mã mở quà <span class="sub">(4 số, bỏ trống nếu không cần)</span></label><input type="text" id="pin" inputmode="numeric" maxlength="4" placeholder="1234"><div class="tiny">Chỉ là khóa cho vui, không phải bảo mật thật sự.</div></div>
+    <div class="field"><label for="phint">Gợi ý mở khóa <span class="sub">(hiện cho người nhận khi bấm Gợi ý hoặc nhập sai)</span></label><input type="text" id="phint" maxlength="60" placeholder="Ví dụ: Ngày mình quen nhau"></div>
   </div>
 
   <div class="card">
@@ -162,7 +163,7 @@ $('go').addEventListener('click',async function(){
     note('Có '+failed+' ảnh chưa tải lên được ('+firstErr+'). Hàm tải ảnh /api/upload chỉ chạy khi trang được đưa lên Vercel. Bạn có thể bỏ ảnh đó hoặc dán link ảnh vào ô bên dưới.',true);
   }
   var data={v:1,s:document.querySelector('input[name=style]:checked').value,t:$('title').value.trim(),m:msg,i:imgs};
-  var pin=$('pin').value;if(/^\d{4}$/.test(pin))data.p=pin;
+  var pin=$('pin').value;if(/^\d{4}$/.test(pin)){data.p=pin;var ph=$('phint').value.trim();if(ph)data.h=ph}
   var mu=$('music').value.trim();if(okUrl(mu))data.a=mu;
   data.i=data.i.map(function(u){return u.indexOf('https://files.catbox.moe/')===0?'c:'+u.slice(25):u});
   var tok=null;
