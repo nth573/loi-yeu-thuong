@@ -48,11 +48,7 @@ body.flower #card{background:rgba(255,255,255,.72);border-color:#fff;color:#7a2d
 #card h1{margin:0 0 6px;font-size:21px;font-weight:700;color:#ff8fb0}
 body.flower #card h1{color:#e0436f}
 #card p{margin:0;font-size:16px;line-height:1.55;white-space:pre-wrap;word-break:break-word}
-#music{position:fixed;left:14px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:5;display:none;align-items:center;gap:8px;border:0;border-radius:999px;padding:9px 16px 9px 10px;font:600 13px system-ui,sans-serif;color:#fff;background:rgba(255,255,255,.16);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);cursor:pointer}
-#music i{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:#ff6f97;font-style:normal;font-size:12px}
-body.flower #music{color:#b33b60;background:rgba(255,255,255,.7)}
-.open ~ #music{bottom:auto;top:calc(12px + env(safe-area-inset-top))}
-.fh{position:absolute;bottom:-30px;pointer-events:none;animation:rise var(--t) linear forwards;opacity:0}
+body.flower .open ~ .fh{position:absolute;bottom:-30px;pointer-events:none;animation:rise var(--t) linear forwards;opacity:0}
 @keyframes rise{0%{opacity:0;transform:translateY(0) scale(.6)}15%{opacity:.9}100%{opacity:0;transform:translateY(-95vh) translateX(var(--x)) scale(1.1)}}
 #loading,#lock,#err{position:fixed;inset:0;z-index:20;display:grid;place-items:center;text-align:center;background:#fff;color:#8a4b60}
 #loading{transition:opacity .5s}
@@ -81,7 +77,6 @@ body.flower #music{color:#b33b60;background:rgba(255,255,255,.7)}
   <div id="letter"></div>
   <section id="card"><h1 id="title"></h1><p id="msg"></p></section>
 </div>
-<button id="music" type="button"><i>♪</i><span>Play Music</span></button>
 <div id="light"><img alt=""></div>
 
 <script>
@@ -160,16 +155,16 @@ if(style==='flower')body.classList.add('flower');else body.classList.add('heartm
 $('hint').textContent=style==='flower'?'Chạm vào hoa nhé 🌷':'Chạm vào trái tim nha ❤';
 
 /* ---------- nhạc ---------- */
-var audio=null,btn=$('music');
+var audio=null;
 if(musicUrl){
-  audio=new Audio();audio.src=musicUrl;audio.loop=true;audio.preload='none';
-  btn.style.display='flex';
-  btn.addEventListener('click',function(e){
-    e.stopPropagation();
-    if(audio.paused)audio.play().catch(function(){});else audio.pause();
-  });
-  audio.addEventListener('play',function(){btn.querySelector('span').textContent='Pause'});
-  audio.addEventListener('pause',function(){btn.querySelector('span').textContent='Play Music'});
+  audio=new Audio();audio.src=musicUrl;audio.loop=true;audio.preload='auto';
+  /* không có nút nhạc: tự phát ở lần chạm đầu tiên (trình duyệt chỉ cho phát sau khi người dùng chạm) */
+  var armAudio=function(){
+    if(!audio)return;
+    var pr=audio.play();
+    if(pr&&pr.then)pr.then(function(){document.removeEventListener('pointerup',armAudio,true);document.removeEventListener('touchend',armAudio,true);document.removeEventListener('click',armAudio,true)}).catch(function(){});
+  };
+  document.addEventListener('pointerup',armAudio,true);document.addEventListener('touchend',armAudio,true);document.addEventListener('click',armAudio,true);
 }
 
 /* ---------- ảnh bay ---------- */
