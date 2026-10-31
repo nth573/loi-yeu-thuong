@@ -668,7 +668,7 @@ function openFlower(){
 
 /* ---------- hộp quà ma trận: quà -> đếm 3-2-1 -> chữ hạt -> ảnh hạt -> lá thư ---------- */
 var G={N:0,D:0,x:null,y:null,sx:null,sy:null,bx:null,by:null,qx:null,qy:null,tx:null,ty:null,ck:null,dl:null,bin:null,pvx:null,pvy:null,hid:null,st:3,prevK:'',fp:[],gh:[],pat:null,ord:null,cnt:null,starts:null,fill:null,
-  t:0,t0:0,tA:.5,tB:.9,last:0,raf:0,scenes:[],si:-1,ts:0,rain:[],im:[],glitch:0,gseed:0,fade:1,hue0:0,hspan:240,hspeed:40,mode:'rgb',psz:1.9,bob:0,ia:0,cur:-1,box:null,fl:false,flA:0,rainA:.55,hintOn:false,capOn:false,fo:[]};
+  t:0,t0:0,tA:.5,tB:.9,last:0,raf:0,scenes:[],si:-1,ts:0,rain:[],im:[],glitch:0,gseed:0,fade:1,hue0:0,hspan:240,hspeed:40,mode:'rgb',psz:1.9,bob:0,ia:0,cur:-1,box:null,fl:false,flA:0,rainA:.9,hintOn:false,capOn:false,fo:[]};
 var HUES=[],RGBC=[],OC=null,OX=null;
 function oc3(x){x=x<0?0:x>1?1:x;return 1-Math.pow(1-x,3)}
 function sm(x){x=x<0?0:x>1?1:x;return x*x*(3-2*x)}
@@ -678,28 +678,22 @@ function gInitColors(){
   for(var k=0;k<4096;k++)RGBC.push('rgb('+(((k>>8)&15)*17)+','+(((k>>4)&15)*17)+','+((k&15)*17)+')');
   OC=document.createElement('canvas');OX=OC.getContext('2d',{willReadFrequently:true});
   /* lưới pixel phủ lên ảnh để thấy từng điểm ảnh */
-  var pc=document.createElement('canvas');pc.width=pc.height=3;var px=pc.getContext('2d');px.fillStyle='rgba(0,0,0,.42)';px.fillRect(2,0,1,3);px.fillRect(0,2,3,1);
+  var pc=document.createElement('canvas');pc.width=pc.height=3;var px=pc.getContext('2d');px.fillStyle='rgba(0,0,0,.22)';px.fillRect(2,0,1,3);px.fillRect(0,2,3,1);
   G.pat=ctx.createPattern(pc,'repeat');
 }
 
 function gResize(){
   W=innerWidth;H=innerHeight;DPR=Math.min(devicePixelRatio||1,2);
   cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);ctx.setTransform(DPR,0,0,DPR,0,0);cx=W/2;
-  var n=Math.floor(W/(mobile?13:15));G.rain=[];
-  for(var i=0;i<n;i++){
-    var L=10+((Math.random()*12)|0),h=Math.round(i/n*340),cs=[];
-    [.16,.28,.42,.58,.74,.95].forEach(function(a){cs.push('hsla('+h+',90%,'+(a>.9?'82%':'60%')+','+a+')')});
-    var ch=[];for(var j=0;j<L;j++)ch.push(gRc());
-    G.rain.push({x:i*(W/n)+4,y:Math.random()*H*1.2-H*.2,sp:70+Math.random()*120,L:L,ch:ch,acc:0,cs:cs});
-  }
+  gRainInit();
   $('hint').style.top=(H*.62)+'px';
 }
 function gRc(){return'0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'.charAt((Math.random()*36)|0)}
 /* lấy mẫu theo lưới đều (mỗi hạt một ô) để nhìn thấy từng pixel; tăng bước lưới cho tới khi vừa số hạt */
-function gSample(bw,bh,drawFn,ox,oy){
+function gSample(bw,bh,drawFn,ox,oy,forceSt){
   OC.width=bw;OC.height=bh;OX.clearRect(0,0,bw,bh);drawFn(OX,bw,bh);
   var d;try{d=OX.getImageData(0,0,bw,bh).data}catch(e){return null}
-  var maxP=G.N-G.D,steps=[2,3,4,5,6,8,10],st=2,pts,y,x,i,si;
+  var maxP=G.N-G.D,steps=forceSt?[forceSt]:[2,3,4,5,6,8,10],st=2,pts,y,x,i,si;
   for(si=0;si<steps.length;si++){
     st=steps[si];var c=0;
     for(y=0;y<bh;y+=st)for(x=0;x<bw;x+=st)if(d[(y*bw+x)*4+3]>110)c++;
@@ -715,9 +709,10 @@ function gSample(bw,bh,drawFn,ox,oy){
 function gMove(pts,o){
   var n=G.N-G.D,m=pts&&pts.length?pts.length/3:0,ox=W/2,oy=H*.42,i,j;
   G.t0=G.t;G.tA=o.tA;G.tB=o.tB;
-  if(m){G.st=pts.st||2;G.psz=G.st<=2?1.5:G.st-1}
+  var rnd=!!(pts&&pts.rnd);
+  if(m){G.st=pts.st||2;G.psz=rnd?(mobile?2.2:1.8):(G.st<=2?1.4:G.st-1)}
   var perm=null;
-  if(m){perm=new Int32Array(m);for(i=0;i<m;i++)perm[i]=i;for(i=m-1;i>0;i--){j=(Math.random()*(i+1))|0;var tmp=perm[i];perm[i]=perm[j];perm[j]=tmp}}
+  if(m&&!rnd){perm=new Int32Array(m);for(i=0;i<m;i++)perm[i]=i;for(i=m-1;i>0;i--){j=(Math.random()*(i+1))|0;var tmp=perm[i];perm[i]=perm[j];perm[j]=tmp}}
   for(i=0;i<n;i++){
     var sx=G.x[i],sy=G.y[i],dx=sx-ox,dy=sy-oy,d=Math.hypot(dx,dy)||1,dist=o.p*(.3+Math.random()*1.05);
     G.sx[i]=sx;G.sy[i]=sy;
@@ -725,7 +720,8 @@ function gMove(pts,o){
     G.dl[i]=o.tA+Math.random()*o.dly;
     var tx,ty;
     if(m){
-      if(i<m){j=perm[i]*3;tx=pts[j];ty=pts[j+1];G.ck[i]=pts[j+2];G.hid[i]=0}
+      if(rnd){j=((Math.random()*m)|0)*3;tx=pts[j]+(Math.random()-.5)*1.6;ty=pts[j+1]+(Math.random()-.5)*1.6;G.ck[i]=pts[j+2];G.hid[i]=0}
+      else if(i<m){j=perm[i]*3;tx=pts[j];ty=pts[j+1];G.ck[i]=pts[j+2];G.hid[i]=0}
       else{j=perm[(Math.random()*m)|0]*3;tx=pts[j];ty=pts[j+1];G.hid[i]=1}
     }else{tx=Math.random()*W;ty=Math.random()*H;G.hid[i]=0}
     G.tx[i]=tx;G.ty[i]=ty;
@@ -758,10 +754,10 @@ function gBox(im){
 }
 function gPhotoPts(o){
   var b=gBox(o.img);G.box=b;
-  var pts=o.cors?gSample(b.w,b.h,function(c,w,h){c.drawImage(o.img,0,0,w,h)},b.x,b.y):null;
+  var pts=o.cors?gSample(b.w,b.h,function(c,w,h){c.drawImage(o.img,0,0,w,h)},b.x,b.y,2):null;if(pts)pts.rnd=true;
   if(!pts||!pts.length){ /* ảnh không cho đọc điểm ảnh: dùng khung màu hồng tím */
     pts=[];for(var i=0;i<9000;i++){var x=Math.random()*b.w,y=Math.random()*b.h,k=((200+((x/b.w*60)|0))>>4<<8)|((90+((y/b.h*120)|0))>>4<<4)|(200>>4);pts.push(b.x+x,b.y+y,k)}
-    pts.st=3;
+    pts.st=3;pts.rnd=true;
   }
   return pts;
 }
@@ -773,7 +769,7 @@ function gLoad(u,cb){
 }
 function gBuild(){
   gInitColors();mobile=W<700||('ontouchstart' in window);
-  G.N=mobile?11000:22000;G.D=Math.round(G.N*.07);var N=G.N;
+  var hc=navigator.hardwareConcurrency||4;G.N=mobile?(hc>=6?18000:12000):28000;G.D=Math.round(G.N*.06);var N=G.N;
   ['x','y','sx','sy','bx','by','qx','qy','tx','ty','dl','pvx','pvy'].forEach(function(k){G[k]=new Float32Array(N)});G.hid=new Uint8Array(N);
   G.ck=new Int16Array(N);G.bin=new Int16Array(N);G.ord=new Int32Array(N);G.cnt=new Int32Array(4200);G.starts=new Int32Array(4201);G.fill=new Int32Array(4200);
   gInitFall();
@@ -799,7 +795,7 @@ function gEnter(){
     if(o.ok===null){G.mode='rgb';gMove(null,{p:150,tA:.6,dly:.3,tB:1,sw:60});s.wait=true;return} /* ảnh chưa tải xong: chờ thêm */
     G.mode='rgb';G.cur=s.i;gMove(gPhotoPts(o),{p:340,tA:.7,dly:.5,tB:1.3,sw:120});
   }else if(s.k==='letter'){
-    G.mode='rgb';G.rainA=.5;gMove(null,{p:0,tA:.01,dly:.8,tB:1.7,sw:0});
+    G.mode='rgb';G.rainA=.45;gMove(null,{p:0,tA:.01,dly:.8,tB:1.7,sw:0});
     for(var i=0;i<G.N-G.D;i++){G.tx[i]=G.sx[i]+(Math.random()-.5)*280;G.ty[i]=-60-Math.random()*H*.4;G.qx[i]=0;G.qy[i]=0;G.bx[i]=G.sx[i];G.by[i]=G.sy[i]}
     setTimeout(function(){$('paper').classList.add('show')},reduce?0:900);
     setTimeout(function(){typeHostId='ptxt';typeLines()},reduce?100:2000);
@@ -812,24 +808,53 @@ function gGhost(i){
   var c=document.createElement('canvas');c.width=c.height=10;var x=c.getContext('2d'),iw=o.img.naturalWidth,ih=o.img.naturalHeight,ss=Math.min(iw,ih);
   x.drawImage(o.img,(iw-ss)/2,(ih-ss)/2,ss,ss,0,0,10,10);x.fillStyle='rgba(0,0,0,.35)';x.fillRect(0,0,10,10);G.gh[i]=c;return c;
 }
-function gRespawn(F,top){
-  var n=Math.max(1,G.im.length);
-  F.i=(Math.random()*n)|0;
-  if(n>1&&F.i===G.cur)F.i=(F.i+1)%n;
-  F.sw=Math.min(W*.2,150)*(F.ghost?.9:.8+Math.random()*.35);
-  F.x=F.sw*.6+Math.random()*(W-F.sw*1.2);F.am=18+Math.random()*34;F.fq=.7+Math.random()*.9;F.p2=Math.random()*6.28;F.r0=(Math.random()-.5)*.5;F.sp=34+Math.random()*44;
-  if(top){F.y=-F.sw}
+function gPick(){
+  var n=G.im.length,on={},c=[],i;
+  for(i=0;i<G.fp.length;i++)if(G.fp[i].live&&!G.fp[i].ghost)on[G.fp[i].i]=1;
+  for(i=0;i<n;i++)if(G.im[i]&&G.im[i].img&&!on[i]&&i!==G.cur)c.push(i);
+  if(!c.length)for(i=0;i<n;i++)if(G.im[i]&&G.im[i].img&&!on[i])c.push(i);
+  return c.length?c[(Math.random()*c.length)|0]:-1;
+}
+function gRespawn(F){
+  var k=gPick();if(k<0){F.live=false;F.wait=1+Math.random()*2;return}
+  F.i=k;F.live=true;
+  F.sw=Math.min(W*.2,150)*.75*(F.ghost?.9:.85+Math.random()*.3);
+  F.x=F.sw*.6+Math.random()*(W-F.sw*1.2);F.am=16+Math.random()*30;F.fq=.7+Math.random()*.8;F.p2=Math.random()*6.28;F.r0=(Math.random()-.5)*.5;F.sp=44+Math.random()*34;
+  F.y=-F.sw;
 }
 function gInitFall(){
-  G.fp=[];var cnt=mobile?5:7;
-  for(var k=0;k<cnt;k++){var F={ghost:k%3===2,ph:Math.random()*10,y:0};gRespawn(F,false);F.y=Math.random()*H;G.fp.push(F)}
+  G.fp=[];var n=Math.max(1,imgs.length),cnt=Math.min(n,mobile?4:6),k;
+  for(k=0;k<cnt;k++)G.fp.push({ghost:false,live:false,wait:k*2.6+Math.random()*2,ph:Math.random()*10,y:-999,i:0});
+  if(n>=2)G.fp.push({ghost:true,live:false,wait:5+Math.random()*4,ph:Math.random()*10,y:-999,i:0});
 }
-function gRain(dt,ra){
-  ctx.font='13px monospace';ctx.textBaseline='top';var lh=15,i,j;
+/* mưa chữ ma trận dày: vẽ bằng bảng ký tự dựng sẵn, cập nhật 30 lần/giây vào canvas phụ */
+function gRainInit(){
+  var gw=9,gh=12,HB=12,LV=6,CH='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  if(!G.at){
+    var at=document.createElement('canvas');at.width=36*gw;at.height=HB*LV*gh;var c=at.getContext('2d');c.font='11px monospace';c.textBaseline='top';
+    var AL=[.2,.34,.5,.66,.84,1];
+    for(var h=0;h<HB;h++)for(var l=0;l<LV;l++){c.fillStyle='hsla('+(h*30+10)+',90%,'+(l===5?'86%':'62%')+','+AL[l]+')';for(var k=0;k<36;k++)c.fillText(CH.charAt(k),k*gw+1,(h*LV+l)*gh)}
+    G.at=at;
+  }
+  G.gw=gw;G.gh2=gh;G.rc=G.rc||document.createElement('canvas');G.rc.width=W;G.rc.height=H;G.rcx=G.rc.getContext('2d');
+  G.rain=[];var cols=Math.floor(W/gw);
+  for(var i=0;i<cols;i++){
+    var ns=(Math.random()<(mobile?.95:.6))?2:1;
+    for(var q=0;q<ns;q++){var L=14+((Math.random()*22)|0),ch=new Int8Array(L);for(var j=0;j<L;j++)ch[j]=(Math.random()*36)|0;
+      G.rain.push({x:i*gw,y:-Math.random()*H*1.4+H*.4*Math.random(),sp:80+Math.random()*130,L:L,ch:ch,acc:0,h:(Math.random()*HB)|0})}
+  }
+  G.racc=0;G.rk=0;
+}
+function gRainTick(dt){
+  G.racc+=dt;if((++G.rk)%2)return;
+  var d=G.racc,gw=G.gw,gh=G.gh2,c=G.rcx,i,j,s;G.racc=0;
+  c.clearRect(0,0,W,H);
   for(i=0;i<G.rain.length;i++){
-    var c=G.rain[i];
-    if(dt){c.y+=c.sp*dt;c.acc+=c.sp*dt;if(c.acc>lh){c.acc=0;c.ch.unshift(gRc());c.ch.pop()}if(c.y-c.L*lh>H){c.y=-Math.random()*H*.4;c.sp=70+Math.random()*120}}
-    for(j=0;j<c.L;j++){var yy=c.y-j*lh;if(yy<-lh||yy>H)continue;ctx.fillStyle=c.cs[j===0?5:Math.min(4,((1-j/c.L)*5)|0)];ctx.globalAlpha=ra+(1-ra)*(j===0?.5:0);ctx.fillText(c.ch[j],c.x,yy)}
+    s=G.rain[i];s.y+=s.sp*d;s.acc+=s.sp*d;
+    if(s.acc>gh){s.acc=0;for(j=s.L-1;j>0;j--)s.ch[j]=s.ch[j-1];s.ch[0]=(Math.random()*36)|0}
+    if(s.y-s.L*gh>H){s.y=-Math.random()*H*.5;s.sp=80+Math.random()*130}
+    var base=s.h*6;
+    for(j=0;j<s.L;j++){var yy=s.y-j*gh;if(yy<-gh||yy>H)continue;var lv=j===0?5:Math.min(4,((1-j/s.L)*5)|0);c.drawImage(G.at,s.ch[j]*gw,(base+lv)*gh,gw,gh,s.x,yy,gw,gh)}
   }
 }
 function gFrame(now){
@@ -849,7 +874,7 @@ function gFrame(now){
   }
   /* nền + mưa chữ */
   ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;ctx.fillStyle='#02030a';ctx.fillRect(0,0,W,H);
-  gRain(dt,G.rainA);
+  gRainTick(dt);ctx.globalAlpha=G.rainA;ctx.drawImage(G.rc,0,0,W,H);
   ctx.globalAlpha=1;
   /* hạt: vị trí theo thời gian, gom theo màu rồi vẽ mỗi màu một lần */
   var n=G.N-G.D,u=t-G.t0,tA=G.tA,tB=G.tB,gl=G.glitch,gs=G.gseed,by0=G.bob,hue=G.mode==='hue',cnt=G.cnt,bin=G.bin,k2;
@@ -874,7 +899,7 @@ function gFrame(now){
   var pos=0,st=G.starts,fp=G.fill;
   for(k2=0;k2<4200;k2++){st[k2]=pos;fp[k2]=pos;pos+=cnt[k2]}st[4200]=pos;
   for(i=0;i<n;i++){if(G.hid[i]&&G.dl[i]+tB<u)continue;if(bin[i]>=0&&!(G.hid[i]&&(u-G.dl[i])/tB>=1))G.ord[fp[bin[i]]++]=i}
-  var br=.5+.5*sm((u-1.0)/1.8),sz=G.psz,glow=hue&&G.scenes[G.si].k!=='letter',pa=(G.scenes[G.si].k==='photo'&&G.ia>0)?1-.55*G.ia:1;
+  var br=.5+.5*sm((u-1.0)/1.8),sz=G.psz,glow=hue&&G.scenes[G.si].k!=='letter',pa=(G.scenes[G.si].k==='photo'&&G.ia>0)?1-.8*G.ia:1;
   ctx.globalAlpha=G.fade;
   for(k2=0;k2<4200;k2++){
     if(!cnt[k2])continue;
@@ -905,7 +930,7 @@ function gFrame(now){
   if(G.ia>0&&G.cur>=0&&G.im[G.cur].img&&G.box){
     var b=G.box;ctx.globalAlpha=G.ia*.92;ctx.drawImage(G.im[G.cur].img,b.x,b.y,b.w,b.h);
     if(G.pat){ctx.globalAlpha=G.ia*.85;ctx.fillStyle=G.pat;ctx.fillRect(b.x,b.y,b.w,b.h)}
-    ctx.globalAlpha=1;gRain(0,.34*Math.min(1,G.ia*1.2));ctx.globalAlpha=1;
+    ctx.globalAlpha=.42*Math.min(1,G.ia*1.2);ctx.drawImage(G.rc,0,0,W,H);ctx.globalAlpha=1;
     /* nhãn nhỏ dưới ảnh */
     if(title){
       ctx.globalAlpha=G.ia*.85;ctx.font='11px system-ui,sans-serif';var tw=Math.min(b.w*.6,ctx.measureText(title.slice(0,24)).width+24),px0=b.x+b.w/2-tw/2,py0=b.y+b.h-26;
@@ -916,20 +941,24 @@ function gFrame(now){
   /* ảnh rơi tự do như lá: đung đưa, xoay, rơi chậm (chạm được ở màn cuối) */
   var fk=G.scenes[G.si].k;G.flA+=(((fk==='photo'||fk==='letter')?1:0)-G.flA)*Math.min(1,dt*2.5);
   G.fo=[];
-  if(G.flA>.02&&G.fp.length){
+  if(G.fp.length){
     for(i=0;i<G.fp.length;i++){
-      var F=G.fp[i],o2=G.im[F.i];if(!o2||!o2.img)continue;
+      var F=G.fp[i];
+      if(!F.live){if(G.flA>.3){F.wait-=dt;if(F.wait<=0)gRespawn(F)}continue}
+      var o2=G.im[F.i];if(!o2||!o2.img){F.live=false;F.wait=1;continue}
       F.y+=F.sp*dt;F.ph+=dt;
-      if(F.y>H+F.sw){gRespawn(F,true)}
+      if(F.y>H+F.sw){F.live=false;F.wait=1+Math.random()*3.5;continue}
+      var yf=F.y/H,fa=yf<.4?1:Math.max(0,1-(yf-.4)/.6),fin=Math.min(1,(F.y+F.sw)/(F.sw*.9));fa*=fin;
+      if(fa<=.01||G.flA<=.02)continue;
       var fx=F.x+Math.sin(F.ph*F.fq)*F.am,fy=F.y,r=Math.sin(F.ph*F.fq*.9+F.p2)*.55+F.r0,sw=F.sw;
       var iw=o2.img.naturalWidth,ih=o2.img.naturalHeight,ss=Math.min(iw,ih);
       ctx.save();ctx.translate(fx,fy);ctx.rotate(r);
       if(F.ghost){
-        ctx.globalAlpha=G.flA*.4;var gc=gGhost(F.i);if(gc){ctx.imageSmoothingEnabled=true;ctx.drawImage(gc,-sw/2,-sw/2,sw,sw)}
+        ctx.globalAlpha=G.flA*.4*fa;var gc=gGhost(F.i);if(gc){ctx.imageSmoothingEnabled=true;ctx.drawImage(gc,-sw/2,-sw/2,sw,sw)}
       }else{
-        ctx.globalAlpha=G.flA*.97;ctx.fillStyle='#fff';ctx.fillRect(-sw/2-4,-sw/2-4,sw+8,sw+14);
+        ctx.globalAlpha=G.flA*.97*fa;ctx.fillStyle='#fff';ctx.fillRect(-sw/2-4,-sw/2-4,sw+8,sw+14);
         ctx.drawImage(o2.img,(iw-ss)/2,(ih-ss)/2,ss,ss,-sw/2,-sw/2,sw,sw);
-        G.fo.push({i:F.i,x:fx,y:fy,r:r,sw:sw});
+        if(fa>.35)G.fo.push({i:F.i,x:fx,y:fy,r:r,sw:sw});
       }
       ctx.restore();
     }
@@ -958,6 +987,7 @@ function giftTap(e){
   }
   G.si=G.scenes.length-2;gNext(); /* chạm khi đang chạy: nhảy tới lá thư */
 }
+
 
 /* ---------- màn nhập pass (bàn phím số) ---------- */
 function buildLock(onOk){
