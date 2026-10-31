@@ -164,7 +164,18 @@ $('go').addEventListener('click',async function(){
   var data={v:1,s:document.querySelector('input[name=style]:checked').value,t:$('title').value.trim(),m:msg,i:imgs};
   var pin=$('pin').value;if(/^\d{4}$/.test(pin))data.p=pin;
   var mu=$('music').value.trim();if(okUrl(mu))data.a=mu;
-  var link=new URL('view.html',location.href);link.search='?d='+b64url(JSON.stringify(data));
+  data.i=data.i.map(function(u){return u.indexOf('https://files.catbox.moe/')===0?'c:'+u.slice(25):u});
+  var tok=null;
+  try{
+    if(window.CompressionStream){
+      var cs=new Blob([new TextEncoder().encode(JSON.stringify(data))]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+      var zb=new Uint8Array(await new Response(cs).arrayBuffer()),zs='';
+      for(var zi=0;zi<zb.length;zi++)zs+=String.fromCharCode(zb[zi]);
+      tok='z'+btoa(zs).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+    }
+  }catch(e){tok=null}
+  if(!tok)tok=b64url(JSON.stringify(data));
+  var link=new URL('view.html',location.href);link.search='?d='+tok;
   $('out').value=link.href;$('open').href=link.href;$('res').style.display='block';
   var ln=$('lenNote');ln.hidden=link.href.length<1500;
   ln.textContent='Link dài '+link.href.length+' ký tự, hơi dài nên một số ứng dụng chat có thể cắt mất. Hãy rút gọn lời chúc hoặc bớt link ảnh.';

@@ -92,14 +92,54 @@ var stage=$('stage'),body=document.body;
 var reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ---------- đọc dữ liệu từ link: ?d=base64url(JSON utf-8) ---------- */
+/* giải nén deflate-raw (bản gọn, chạy được trên cả webview cũ) */
+function inflateRaw(src){
+  var pos=0,bb=0,bc=0,out=[];
+  function bits(n){var v=bb;while(bc<n){if(pos>=src.length)throw 0;v|=src[pos++]<<bc;bc+=8}bb=v>>n;bc-=n;return v&((1<<n)-1)}
+  function mk(lens){var cnt=new Array(16).fill(0),i,sy=[],off=[0,0];for(i=0;i<lens.length;i++)cnt[lens[i]]++;cnt[0]=0;for(i=1;i<16;i++)off[i+1]=off[i]+cnt[i];for(i=0;i<lens.length;i++)if(lens[i])sy[off[lens[i]]++]=i;return{c:cnt,s:sy}}
+  function dec(h){var code=0,first=0,idx=0;for(var l=1;l<16;l++){code|=bits(1);var c=h.c[l];if(code-c<first)return h.s[idx+(code-first)];idx+=c;first+=c;first<<=1;code<<=1}throw 0}
+  var LB=[3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258],LE=[0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0],
+      DB=[1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577],DE=[0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13],
+      ORD=[16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15];
+  var fl=null,fd=null,last,i;
+  do{
+    last=bits(1);var t=bits(2);
+    if(t===0){bb=0;bc=0;var n=src[pos]|(src[pos+1]<<8);pos+=4;for(i=0;i<n;i++)out.push(src[pos++])}
+    else if(t===1||t===2){
+      var hl,hd;
+      if(t===1){if(!fl){var L=[];for(i=0;i<288;i++)L[i]=i<144?8:i<256?9:i<280?7:8;fl=mk(L);fd=mk(new Array(30).fill(5))}hl=fl;hd=fd}
+      else{
+        var nl=bits(5)+257,nd=bits(5)+1,nc=bits(4)+4,lens=new Array(19).fill(0);
+        for(i=0;i<nc;i++)lens[ORD[i]]=bits(3);
+        var ch=mk(lens),ll=[];
+        while(ll.length<nl+nd){
+          var sy=dec(ch);
+          if(sy<16)ll.push(sy);
+          else{var pv=0,rp;if(sy===16){pv=ll[ll.length-1];rp=3+bits(2)}else if(sy===17)rp=3+bits(3);else rp=11+bits(7);while(rp--)ll.push(pv)}
+        }
+        hl=mk(ll.slice(0,nl));hd=mk(ll.slice(nl));
+      }
+      for(;;){
+        var s=dec(hl);
+        if(s<256)out.push(s);else if(s===256)break;
+        else{s-=257;var len=LB[s]+bits(LE[s]),ds=dec(hd),dist=DB[ds]+bits(DE[ds]);for(i=0;i<len;i++)out.push(out[out.length-dist])}
+      }
+    }else throw 0;
+  }while(!last);
+  return new Uint8Array(out);
+}
 function decode(){
   var d=new URLSearchParams(location.search).get('d');
   if(!d)return null;
+  var zip=d.charAt(0)==='z';if(zip)d=d.slice(1);
   d=d.replace(/-/g,'+').replace(/_/g,'/');
   while(d.length%4)d+='=';
   var bin=atob(d),bytes=new Uint8Array(bin.length);
   for(var i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
-  return JSON.parse(new TextDecoder().decode(bytes));
+  if(zip)bytes=inflateRaw(bytes);
+  var o=JSON.parse(new TextDecoder().decode(bytes));
+  if(o&&Array.isArray(o.i))o.i=o.i.map(function(u){return typeof u==='string'&&u.indexOf('c:')===0?'https://files.catbox.moe/'+u.slice(2):u});
+  return o;
 }
 function safeUrl(u){
   try{var x=new URL(u);return(x.protocol==='https:'||x.protocol==='http:')?x.href:null}catch(e){return null}
