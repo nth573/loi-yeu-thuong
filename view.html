@@ -827,7 +827,7 @@ function gPick(){
 function gRespawn(F){
   var k=gPick();if(k<0){F.live=false;F.wait=1+Math.random()*2;return}
   F.i=k;F.live=true;F.dm=1;
-  F.sw=(G.box?G.box.w:Math.min(W*.9*TS,H*.6*TS*.75))*(.05+Math.random()*.05); /* random 5%-10% ảnh hiển thị */
+  F.sw=(G.box?G.box.w:Math.min(W*.9*TS,H*.6*TS*.75))*(.10+Math.random()*.15); /* random 10%-25% ảnh hiển thị */
   F.x=F.sw*.6+Math.random()*(W-F.sw*1.2);F.r0=(Math.random()-.5)*.3;F.sp=44+Math.random()*34;
   F.y=-F.sw;
 }
