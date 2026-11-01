@@ -667,7 +667,7 @@ function openFlower(){
 }
 
 /* ---------- hộp quà ma trận: quà -> đếm 3-2-1 -> chữ hạt -> ảnh hạt -> lá thư ---------- */
-var G={N:0,D:0,x:null,y:null,sx:null,sy:null,bx:null,by:null,qx:null,qy:null,tx:null,ty:null,ck:null,dl:null,bin:null,pvx:null,pvy:null,hid:null,st:3,prevK:'',fp:[],gh:[],th:[],pb:1,dis:0,rnk:null,viOn:false,vi0:0,pat:null,ord:null,cnt:null,starts:null,fill:null,
+var G={N:0,D:0,x:null,y:null,sx:null,sy:null,bx:null,by:null,qx:null,qy:null,tx:null,ty:null,ck:null,dl:null,bin:null,pvx:null,pvy:null,hid:null,st:3,prevK:'',fp:[],gh:[],th:[],pb:1,xo:null,viOn:false,vi0:0,pat:null,ord:null,cnt:null,starts:null,fill:null,
   t:0,t0:0,tA:.5,tB:.9,last:0,raf:0,scenes:[],si:-1,ts:0,rain:[],im:[],glitch:0,gseed:0,fade:1,hue0:0,hspan:240,hspeed:40,mode:'rgb',psz:1.9,bob:0,ia:0,cur:-1,box:null,fl:false,flA:0,rainA:.9,hintOn:false,capOn:false,fo:[]};
 var HUES=[],RGBC=[],OC=null,OX=null;
 function oc3(x){x=x<0?0:x>1?1:x;return 1-Math.pow(1-x,3)}
@@ -774,11 +774,11 @@ function gBuild(){
   ['x','y','sx','sy','bx','by','qx','qy','tx','ty','dl','pvx','pvy'].forEach(function(k){G[k]=new Float32Array(N)});G.hid=new Uint8Array(N);
   G.ck=new Int16Array(N);G.bin=new Int16Array(N);G.ord=new Int32Array(N);G.cnt=new Int32Array(4200);G.starts=new Int32Array(4201);G.fill=new Int32Array(4200);
   gInitFall();
-  G.rnk=new Float32Array(N);for(var i=0;i<N;i++){G.rnk[i]=Math.random();G.x[i]=Math.random()*W;G.y[i]=Math.random()*H;G.ck[i]=2184}
+  for(var i=0;i<N;i++){G.x[i]=Math.random()*W;G.y[i]=Math.random()*H;G.ck[i]=2184}
   G.scenes=[{k:'gift'},{k:'digit',v:'3',h:75,d:2.5},{k:'digit',v:'2',h:160,d:2.5},{k:'digit',v:'1',h:215,d:2.5}];
   (words.length?words:[title||'I LOVE YOU']).forEach(function(w){G.scenes.push({k:'word',v:w,d:3.4})});
   G.im=[];imgs.forEach(function(u){var o={img:null,cors:false,ok:null};G.im.push(o);gLoad(u,function(r){if(r){o.img=r.img;o.cors=r.cors;o.ok=true}else o.ok=false})});
-  imgs.forEach(function(u,i){G.scenes.push({k:'photo',i:i,d:8.2})});
+  imgs.forEach(function(u,i){G.scenes.push({k:'photo',i:i,d:6.8})});
   G.scenes.push({k:'letter'});
   G.si=0;G.ts=0;G.t=reduce?30:0;
   gEnter();
@@ -786,7 +786,7 @@ function gBuild(){
 }
 function gNext(){G.si++;if(G.si>=G.scenes.length)G.si=G.scenes.length-1;G.ts=G.t;gEnter()}
 function gEnter(){
-  var s=G.scenes[G.si];G.prevK=s.k;G.viOn=G.dis>.9;G.vi0=G.t;G.dis=0;G.pb=1;G.glitch=0;G.fl=(s.k==='photo'||s.k==='letter');G.cur=-1;G.ia=0;
+  var s=G.scenes[G.si];G.prevK=s.k;G.xo=(G.cur>=0&&G.ia>0&&G.box&&G.im[G.cur]&&G.im[G.cur].img)?{img:G.im[G.cur].img,b:G.box,a0:G.ia*.92*G.pb,g0:G.ia*.85*G.pb,o0:.42*Math.min(1,G.ia*1.2),t0:G.t}:null;G.viOn=!!G.xo;G.vi0=G.t;G.pb=1;G.glitch=0;G.fl=(s.k==='photo'||s.k==='letter');G.cur=-1;G.ia=0;
   if(s.k==='gift'){G.mode='rgb';gMove(gGiftPts(),{p:0,tA:.01,dly:.7,tB:1.5,sw:60});G.fade=1}
   else if(s.k==='digit'){G.mode='hue';G.hue0=s.h;G.hspan=30;G.hspeed=0;gMove(gTextPts(s.v,true),{p:260,tA:.6,dly:.35,tB:1.05,sw:90})}
   else if(s.k==='word'){G.mode='hue';G.hue0=0;G.hspan=240;G.hspeed=45;G.gseed=(Math.random()*999)|0;gMove(gTextPts(s.v,false),{p:300,tA:.6,dly:.4,tB:1.15,sw:110})}
@@ -845,7 +845,7 @@ function gRespawn(F){
   F.i=k;F.live=true;F.dm=1;F.sw=sw;F.x=x;F.r0=(Math.random()-.5)*.3;F.sp=sp;F.y=-sw;
 }
 function gInitFall(){
-  G.fp=[];var n=Math.max(1,imgs.length),cnt=Math.min(mobile?8:13,n*2+1),gn=n>=2?(mobile?2:3):0,k;
+  G.fp=[];var n=Math.max(1,imgs.length),cnt=Math.min(mobile?4:6,n*2+1),gn=n>=2?(mobile?1:2):0,k;
   for(k=0;k<cnt;k++)G.fp.push({ghost:false,live:false,wait:k*.7+Math.random()*1.2,y:-999,i:0,dm:1,r0:0});
   for(k=0;k<gn;k++)G.fp.push({ghost:true,live:false,wait:2+k*1.6+Math.random()*3,y:-999,i:0,dm:1,r0:0});
 }
@@ -887,10 +887,9 @@ function gFrame(now){
   s=G.scenes[G.si];ts=t-G.ts;
   if(s.k==='word'){G.glitch=ts<1.0?0:(ts<2.0?.9*(1-(ts-1.0)/1.0):0)}
   if(s.k==='photo'&&G.cur>=0){
-    var kA=s.d-3.2,kB=s.d-1.6,kC=s.d-.2;
+    var kA=s.d-1.8,kB=s.d-.4;               /* giảm sáng từ kA tới kB, giữ ở 25% rồi nổ ở cuối cảnh */
     G.ia=sm((ts-1.5)/1.0);                  /* ảnh thật + lưới pixel hiện dần */
     G.pb=1-.75*sm((ts-kA)/(kB-kA));         /* giảm sáng dần 100% -> 25%: thấy rõ mưa ma trận */
-    G.dis=sm((ts-kB)/(kC-kB));              /* rồi tan biến (0 -> 1) */
   }
   G.bob=s.k==='gift'?Math.sin(t*1.7)*4:0;
   if(s.k==='gift'&&!G.hintOn&&t>1){G.hintOn=true;hintShow()}
@@ -904,7 +903,7 @@ function gFrame(now){
   gRainTick(dt);ctx.globalAlpha=G.rainA;ctx.drawImage(G.rc,0,0,W,H);
   ctx.globalAlpha=1;
   /* hạt: vị trí theo thời gian, gom theo màu rồi vẽ mỗi màu một lần */
-  var n=G.N-G.D,u=t-G.t0,tA=G.tA,tB=G.tB,gl=G.glitch,gs=G.gseed,by0=G.bob,hue=G.mode==='hue',cnt=G.cnt,bin=G.bin,k2,dis=s.k==='photo'?G.dis:0,rnk=G.rnk;
+  var n=G.N-G.D,u=t-G.t0,tA=G.tA,tB=G.tB,gl=G.glitch,gs=G.gseed,by0=G.bob,hue=G.mode==='hue',cnt=G.cnt,bin=G.bin,k2;
   cnt.fill(0);
   for(i=0;i<n;i++){
     var px,py,v=0,dli=G.dl[i];
@@ -918,7 +917,6 @@ function gFrame(now){
     }
     G.pvx[i]=px-G.x[i];G.pvy[i]=py-G.y[i];G.x[i]=px;G.y[i]=py;
     if(G.hid[i]&&v>=1)continue;
-    if(dis>0&&rnk[i]<dis){bin[i]=-1;continue}
     var bn;
     if(hue)bn=4096+((((px/W)*G.hspan+t*G.hspeed+G.hue0)%360+360)%360/5|0);
     else bn=G.ck[i];
@@ -927,12 +925,12 @@ function gFrame(now){
   var pos=0,st=G.starts,fp=G.fill;
   for(k2=0;k2<4200;k2++){st[k2]=pos;fp[k2]=pos;pos+=cnt[k2]}st[4200]=pos;
   for(i=0;i<n;i++){if(G.hid[i]&&G.dl[i]+tB<u)continue;if(bin[i]>=0&&!(G.hid[i]&&(u-G.dl[i])/tB>=1))G.ord[fp[bin[i]]++]=i}
-  var br=.5+.5*sm((u-1.0)/1.8),sz=G.psz,glow=hue&&G.scenes[G.si].k!=='letter',pa=(G.scenes[G.si].k==='photo'&&G.ia>0)?1-.8*G.ia:1,vis=G.scenes[G.si].k==='photo'?G.pb*(1-G.dis):1,vin=G.viOn?sm((t-G.vi0)/.8):1;
+  var br=.5+.5*sm((u-1.0)/1.8),sz=G.psz,glow=hue&&G.scenes[G.si].k!=='letter',pa=(G.scenes[G.si].k==='photo'&&G.ia>0)?1-.8*G.ia:1,vis=G.scenes[G.si].k==='photo'?G.pb:1,vin=G.viOn?.3+.7*sm((t-G.vi0)/.15):1,brx=G.viOn?Math.max(br,1-.8*sm((t-G.vi0)/.8)):br; /* nổ: hạt sáng chói rồi dịu dần */
   ctx.globalAlpha=G.fade;
   for(k2=0;k2<4200;k2++){
     if(!cnt[k2])continue;
     var col=k2>=4096?HUES[k2-4096]:RGBC[k2],lo=st[k2],hi=fp[k2];
-    ctx.fillStyle=col;ctx.globalAlpha=G.fade*br*pa*vis*vin;ctx.beginPath();
+    ctx.fillStyle=col;ctx.globalAlpha=G.fade*brx*pa*vis*vin;ctx.beginPath();
     for(var q=lo;q<hi;q++){
       var ii=G.ord[q],xx=G.x[ii],yy=G.y[ii]+by0;
       if(gl>.02)xx+=(((((yy/6)|0)*9301+gs)%17)-8)*gl*3.2;
@@ -955,11 +953,11 @@ function gFrame(now){
   }
   ctx.globalAlpha=1;
   /* ảnh thật hiện dần trên lớp hạt, rồi tối dần; lưới pixel mịn + mưa chữ phủ lên */
-  if(G.ia>0&&G.cur>=0&&G.im[G.cur].img&&G.box&&G.dis<.996){
-    var vz=G.pb*(1-G.dis),dz=1-G.dis;
+  if(G.ia>0&&G.cur>=0&&G.im[G.cur].img&&G.box){
+    var vz=G.pb;
     var b=G.box;ctx.globalAlpha=G.ia*.92*vz;ctx.drawImage(G.im[G.cur].img,b.x,b.y,b.w,b.h);
     if(G.pat){ctx.globalAlpha=G.ia*.85*vz;ctx.fillStyle=G.pat;ctx.fillRect(b.x,b.y,b.w,b.h)}
-    ctx.globalAlpha=.42*Math.min(1,G.ia*1.2)*dz;ctx.drawImage(G.rc,0,0,W,H);ctx.globalAlpha=1;
+    ctx.globalAlpha=.42*Math.min(1,G.ia*1.2);ctx.drawImage(G.rc,0,0,W,H);ctx.globalAlpha=1;
     /* nhãn nhỏ dưới ảnh */
     if(title){
       ctx.globalAlpha=G.ia*.85*vz;ctx.font='11px system-ui,sans-serif';var tw=Math.min(b.w*.6,ctx.measureText(title.slice(0,24)).width+24),px0=b.x+b.w/2-tw/2,py0=b.y+b.h-26;
@@ -967,14 +965,26 @@ function gFrame(now){
       ctx.font='11px system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#e8e8ee';ctx.fillText(title.slice(0,24),b.x+b.w/2,py0+9.5);ctx.textAlign='left';ctx.textBaseline='top';ctx.globalAlpha=1;
     }
   }
+  if(G.xo){
+    var xk=(t-G.xo.t0)/.3;
+    if(xk>=1)G.xo=null;
+    else{
+      var xf=1-sm(xk),xb=G.xo.b;
+      ctx.globalAlpha=G.xo.a0*xf;ctx.drawImage(G.xo.img,xb.x,xb.y,xb.w,xb.h);
+      if(G.pat){ctx.globalAlpha=G.xo.g0*xf;ctx.fillStyle=G.pat;ctx.fillRect(xb.x,xb.y,xb.w,xb.h)}
+      ctx.globalAlpha=G.xo.o0*xf;ctx.drawImage(G.rc,0,0,W,H);ctx.globalAlpha=1;
+    }
+  }
   /* ảnh rơi thẳng, không lắc; chạm ảnh đang hiển thị thì mờ dần (không biến mất) để tạo chiều sâu */
   var fk=G.scenes[G.si].k;G.flA+=(((fk==='photo'||fk==='letter')?1:0)-G.flA)*Math.min(1,dt*2.5);
   G.fo=[];
-  var hb=G.box,hitOn=(fk==='photo'&&G.cur>=0&&hb&&G.pb*(1-G.dis)>.05);
+  var hb=G.box,hitOn=(fk==='photo'&&G.cur>=0&&hb&&G.pb>.05);
+  var alive=0;for(i=0;i<G.fp.length;i++)if(G.fp[i].live&&!G.fp[i].ghost)alive++;
   if(G.fp.length){
     for(i=0;i<G.fp.length;i++){
       var F=G.fp[i];
-      if(!F.live){if(G.flA>.3){F.wait-=dt;if(F.wait<=0)gRespawn(F)}continue}
+      /* luôn giữ ít nhất 2 ảnh rơi: thiếu thì ảnh kế tiếp rơi ngay, không chờ */
+      if(!F.live){if(G.flA>.3){F.wait-=dt;if(F.wait<=0||(alive<2&&!F.ghost)){gRespawn(F);if(F.live&&!F.ghost)alive++}}continue}
       var o2=G.im[F.i];if(!o2||!o2.img){F.live=false;F.wait=1;continue}
       F.y+=F.sp*dt;
       if(F.y>H+F.sw){F.live=false;F.wait=.15+Math.random()*1.1;continue}
