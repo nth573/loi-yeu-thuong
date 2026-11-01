@@ -778,7 +778,7 @@ function gBuild(){
   G.scenes=[{k:'gift'},{k:'digit',v:'3',h:75,d:2.5},{k:'digit',v:'2',h:160,d:2.5},{k:'digit',v:'1',h:215,d:2.5}];
   (words.length?words:[title||'I LOVE YOU']).forEach(function(w){G.scenes.push({k:'word',v:w,d:3.4})});
   G.im=[];imgs.forEach(function(u){var o={img:null,cors:false,ok:null};G.im.push(o);gLoad(u,function(r){if(r){o.img=r.img;o.cors=r.cors;o.ok=true}else o.ok=false})});
-  imgs.forEach(function(u,i){G.scenes.push({k:'photo',i:i,d:6.2})});
+  imgs.forEach(function(u,i){G.scenes.push({k:'photo',i:i,d:8.2})});
   G.scenes.push({k:'letter'});
   G.si=0;G.ts=0;G.t=reduce?30:0;
   gEnter();
@@ -826,10 +826,23 @@ function gPick(){
 /* ảnh rơi thẳng xuống: không đung đưa, không xoay (chỉ nghiêng nhẹ cố định) */
 function gRespawn(F){
   var k=gPick();if(k<0){F.live=false;F.wait=1+Math.random()*2;return}
-  F.i=k;F.live=true;F.dm=1;
-  F.sw=(G.box?G.box.w:Math.min(W*.9*TS,H*.6*TS*.75))*(.10+Math.random()*.15); /* random 10%-25% ảnh hiển thị */
-  F.x=F.sw*.6+Math.random()*(W-F.sw*1.2);F.r0=(Math.random()-.5)*.3;F.sp=44+Math.random()*34;
-  F.y=-F.sw;
+  var sw=(G.box?G.box.w:Math.min(W*.9*TS,H*.6*TS*.75))*(.12+Math.random()*.08); /* random 12%-20% ảnh hiển thị */
+  var hw=sw*.6+3,hh=sw*.62+4,x=0,sp=0,ok=false,t,j;
+  /* ảnh rơi thẳng nên x cố định: chọn cột không trùng ảnh nào đang rơi; nếu trùng cột thì ảnh kia phải đã đủ thấp
+     và ảnh mới không rơi nhanh hơn ảnh đó (không bao giờ đuổi kịp) */
+  for(t=0;t<16&&!ok;t++){
+    x=sw*.6+Math.random()*(W-sw*1.2);sp=44+Math.random()*34;ok=true;
+    for(j=0;j<G.fp.length;j++){
+      var Q=G.fp[j];if(Q===F||!Q.live||Q.y>H)continue;
+      var hw2=Q.sw*.6+3,hh2=Q.sw*.62+4;
+      if(Math.abs(x-Q.x)<hw+hw2+4){
+        if(Q.y-hh2<-sw+hh+8){ok=false;break}
+        if(Q.sp<sp)sp=Q.sp;
+      }
+    }
+  }
+  if(!ok){F.live=false;F.wait=.3+Math.random()*.6;return}
+  F.i=k;F.live=true;F.dm=1;F.sw=sw;F.x=x;F.r0=(Math.random()-.5)*.3;F.sp=sp;F.y=-sw;
 }
 function gInitFall(){
   G.fp=[];var n=Math.max(1,imgs.length),cnt=Math.min(mobile?8:13,n*2+1),gn=n>=2?(mobile?2:3):0,k;
@@ -874,7 +887,7 @@ function gFrame(now){
   s=G.scenes[G.si];ts=t-G.ts;
   if(s.k==='word'){G.glitch=ts<1.0?0:(ts<2.0?.9*(1-(ts-1.0)/1.0):0)}
   if(s.k==='photo'&&G.cur>=0){
-    var kA=3.0,kB=s.d-1.6,kC=s.d-.2;
+    var kA=s.d-3.2,kB=s.d-1.6,kC=s.d-.2;
     G.ia=sm((ts-1.5)/1.0);                  /* ảnh thật + lưới pixel hiện dần */
     G.pb=1-.75*sm((ts-kA)/(kB-kA));         /* giảm sáng dần 100% -> 25%: thấy rõ mưa ma trận */
     G.dis=sm((ts-kB)/(kC-kB));              /* rồi tan biến (0 -> 1) */
