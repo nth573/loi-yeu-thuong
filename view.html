@@ -729,11 +729,12 @@ function gMove(pts,o){
     G.qx[i]=-ey/L*am;G.qy[i]=ex/L*am;
   }
 }
+var TS=.78; /* tỉ lệ chữ, số, ảnh hiển thị so với bản trước */
 function gTextPts(txt,big){
   var bw=Math.round(W),bh=Math.round(H*(big?.55:.4)),oy=Math.round(H*.42-bh/2);
   return gSample(bw,bh,function(c,w,h){
-    var fs=h*(big?.9:.62);c.font='900 '+fs+'px "Arial Black",Impact,system-ui,sans-serif';
-    var m=c.measureText(txt).width;if(m>w*.9)fs=fs*w*.9/m;
+    var fs=h*(big?.9:.62)*TS;c.font='900 '+fs+'px "Arial Black",Impact,system-ui,sans-serif';
+    var m=c.measureText(txt).width;if(m>w*.9*TS)fs=fs*w*.9*TS/m;
     c.font='900 '+fs+'px "Arial Black",Impact,system-ui,sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillStyle='#fff';c.fillText(txt,w/2,h/2+fs*.04);
   },0,oy);
 }
@@ -748,8 +749,8 @@ function gGiftPts(){
   },ox,oy);
 }
 function gBox(im){
-  var bw=Math.min(W*.9,H*.6*(im.naturalWidth/im.naturalHeight)),bh=bw*im.naturalHeight/im.naturalWidth;
-  if(bh>H*.6){bh=H*.6;bw=bh*im.naturalWidth/im.naturalHeight}
+  var ar=im.naturalWidth/im.naturalHeight,mw=W*.9*TS,mh=H*.6*TS,bw=Math.min(mw,mh*ar),bh=bw/ar;
+  if(bh>mh){bh=mh;bw=bh*ar}
   return{x:Math.round(W/2-bw/2),y:Math.round(H*.44-bh/2),w:Math.round(bw),h:Math.round(bh)};
 }
 function gPhotoPts(o){
@@ -826,12 +827,12 @@ function gPick(){
 function gRespawn(F){
   var k=gPick();if(k<0){F.live=false;F.wait=1+Math.random()*2;return}
   F.i=k;F.live=true;F.dm=1;
-  F.sw=Math.min(W*.2,150)*.75*.75*(F.ghost?.9:.85+Math.random()*.3); /* nhỏ hơn 25% so với bản trước */
+  F.sw=(G.box?G.box.w:Math.min(W*.9*TS,H*.6*TS*.75))*(.05+Math.random()*.05); /* random 5%-10% ảnh hiển thị */
   F.x=F.sw*.6+Math.random()*(W-F.sw*1.2);F.r0=(Math.random()-.5)*.3;F.sp=44+Math.random()*34;
   F.y=-F.sw;
 }
 function gInitFall(){
-  G.fp=[];var n=Math.max(1,imgs.length),cnt=Math.min(mobile?9:14,n*2+2),gn=n>=2?(mobile?2:3):0,k;
+  G.fp=[];var n=Math.max(1,imgs.length),cnt=Math.min(mobile?8:13,n*2+1),gn=n>=2?(mobile?2:3):0,k;
   for(k=0;k<cnt;k++)G.fp.push({ghost:false,live:false,wait:k*.7+Math.random()*1.2,y:-999,i:0,dm:1,r0:0});
   for(k=0;k<gn;k++)G.fp.push({ghost:true,live:false,wait:2+k*1.6+Math.random()*3,y:-999,i:0,dm:1,r0:0});
 }
